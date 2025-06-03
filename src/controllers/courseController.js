@@ -1,15 +1,16 @@
-const supabase = require('../utils/supabase');
+const { supabase, supabaseAdmin } = require('../utils/supabase');
 const { v4: uuidv4 } = require('uuid');
 
 // Get all courses with pagination and filtering
 const getCourses = async (req, res) => {
   try {
-    const { page = 1, limit = 10, category, level, search } = req.query;
+    const { page = 1, limit = 10, category, level, search, featured } = req.query;
     const offset = (page - 1) * limit;
     
     let query = supabase
       .from('courses')
-      .select('*', { count: 'exact' });
+      .select('*', { count: 'exact' })
+      .eq('status', 'active'); // Only show active courses
       
     // Apply filters if provided
     if (category) {
@@ -20,8 +21,12 @@ const getCourses = async (req, res) => {
       query = query.eq('level', level);
     }
     
+    if (featured !== undefined) {
+      query = query.eq('featured', featured === 'true');
+    }
+    
     if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,instructor_name.ilike.%${search}%,tags.cs.{${search}}`);
     }
     
     // Apply pagination
@@ -75,51 +80,89 @@ const getCourseById = async (req, res) => {
   }
 };
 
-// Create a new course
+// Create a new course (Admin only)
 const createCourse = async (req, res) => {
   try {
+    console.log('Request body:', req.body);
+    
     const { 
+      uid,
       title, 
       description, 
       category, 
       level, 
       duration, 
-      price, 
+      price,
+      original_price,
       image, 
       instructor_name,
       instructor_bio,
+      instructor_image,
       syllabus,
-      uid 
+      prerequisites,
+      learning_outcomes,
+      skills_gained,
+      language,
+      certificate,
+      rating,
+      total_reviews,
+      total_students,
+      featured,
+      status,
+      video_preview_url,
+      course_materials,
+      tags
     } = req.body;
     
-    // Create a new course entry
-    const { data: course, error } = await supabase
+    console.log('Extracted fields:', { uid, title, category, level });
+    
+    // The UID has already been verified by checkAdminByUid middleware
+    const createdBy = uid;
+    
+    const insertData = {
+      title,
+      description,
+      category,
+      level,
+      duration,
+      price: price || 0.00,
+      original_price: original_price || null,
+      image: image || null,
+      instructor_name,
+      instructor_bio: instructor_bio || null,
+      instructor_image: instructor_image || null,
+      syllabus: syllabus || null,
+      prerequisites: prerequisites || [],
+      learning_outcomes: learning_outcomes || [],
+      skills_gained: skills_gained || [],
+      language: language || 'English',
+      certificate: certificate !== undefined ? certificate : true,
+      rating: rating || 0.00,
+      total_reviews: total_reviews || 0,
+      total_students: total_students || 0,
+      featured: featured || false,
+      status: status || 'active',
+      video_preview_url: video_preview_url || null,
+      course_materials: course_materials || null,
+      tags: tags || [],
+      created_by: createdBy
+    };
+    
+    console.log('Insert data:', insertData);
+    
+    // Use admin client to bypass RLS for admin operations
+    const { data: course, error } = await supabaseAdmin
       .from('courses')
-      .insert([
-        {
-          id: uuidv4(),
-          title,
-          description,
-          category,
-          level,
-          duration,
-          price,
-          image,
-          instructor_name,
-          instructor_bio,
-          syllabus,
-          created_by: uid,
-          created_at: new Date(),
-          updated_at: new Date()
-        }
-      ])
+      .insert([insertData])
       .select()
       .single();
       
     if (error) {
-      console.error('Error creating course:', error);
-      return res.status(500).json({ error: 'Failed to create course' });
+      console.error('Supabase error creating course:', error);
+      return res.status(500).json({ error: 'Failed to create course', details: error.message });
     }
+    
+    console.log('Course created successfully:', course);
     
     res.status(201).json({ 
       message: 'Course created successfully', 
@@ -127,26 +170,41 @@ const createCourse = async (req, res) => {
     });
   } catch (error) {
     console.error('Create course error:', error);
-    res.status(500).json({ error: 'Server error creating course' });
+    res.status(500).json({ error: 'Server error creating course', details: error.message });
   }
 };
 
-// Update an existing course
+// Update an existing course (Admin only)
 const updateCourse = async (req, res) => {
   try {
     const { id } = req.params;
     const { 
+      uid,
       title, 
       description, 
       category, 
       level, 
       duration, 
-      price, 
+      price,
+      original_price,
       image, 
       instructor_name,
       instructor_bio,
+      instructor_image,
       syllabus,
-      uid 
+      prerequisites,
+      learning_outcomes,
+      skills_gained,
+      language,
+      certificate,
+      rating,
+      total_reviews,
+      total_students,
+      featured,
+      status,
+      video_preview_url,
+      course_materials,
+      tags
     } = req.body;
     
     // First check if the course exists
@@ -160,13 +218,8 @@ const updateCourse = async (req, res) => {
       return res.status(404).json({ error: 'Course not found' });
     }
     
-    // Check if user is the creator or has admin role
-    if (existingCourse.created_by !== uid && req.userRole !== 'admin') {
-      return res.status(403).json({ error: 'You are not authorized to update this course' });
-    }
-    
-    // Update the course
-    const { data: updatedCourse, error } = await supabase
+    // Update the course using admin client (admin can update any course)
+    const { data: updatedCourse, error } = await supabaseAdmin
       .from('courses')
       .update({
         title,
@@ -175,10 +228,25 @@ const updateCourse = async (req, res) => {
         level,
         duration,
         price,
+        original_price,
         image,
         instructor_name,
         instructor_bio,
+        instructor_image,
         syllabus,
+        prerequisites,
+        learning_outcomes,
+        skills_gained,
+        language,
+        certificate,
+        rating,
+        total_reviews,
+        total_students,
+        featured,
+        status,
+        video_preview_url,
+        course_materials,
+        tags,
         updated_at: new Date()
       })
       .eq('id', id)
@@ -200,7 +268,7 @@ const updateCourse = async (req, res) => {
   }
 };
 
-// Delete a course
+// Delete a course (Admin only)
 const deleteCourse = async (req, res) => {
   try {
     const { id } = req.params;
@@ -217,13 +285,8 @@ const deleteCourse = async (req, res) => {
       return res.status(404).json({ error: 'Course not found' });
     }
     
-    // Check if user is the creator or has admin role
-    if (existingCourse.created_by !== uid && req.userRole !== 'admin') {
-      return res.status(403).json({ error: 'You are not authorized to delete this course' });
-    }
-    
-    // Delete the course
-    const { error } = await supabase
+    // Delete the course using admin client (admin can delete any course)
+    const { error } = await supabaseAdmin
       .from('courses')
       .delete()
       .eq('id', id);

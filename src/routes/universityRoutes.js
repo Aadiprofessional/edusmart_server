@@ -1,26 +1,28 @@
 const express = require('express');
 const router = express.Router();
-const universityController = require('../controllers/universityController');
+const {
+  getAllUniversities,
+  getUniversityById,
+  createUniversity,
+  updateUniversity,
+  deleteUniversity,
+  getUniversitiesByCountry,
+  searchUniversities,
+  getUniversityCountries
+} = require('../controllers/universityController');
+const { checkAdminByUid } = require('../middlewares/auth');
+const { universityValidationRules } = require('../middlewares/validators');
 
-// Get all universities
-router.get('/', universityController.getAllUniversities);
+// Public routes
+router.get('/', getAllUniversities);
+router.get('/countries', getUniversityCountries);
+router.get('/country/:country', getUniversitiesByCountry);
+router.get('/search/:query', searchUniversities);
+router.get('/:id', getUniversityById);
 
-// Get university by ID
-router.get('/:id', universityController.getUniversityById);
-
-// Create new university
-router.post('/', universityController.createUniversity);
-
-// Update university
-router.put('/:id', universityController.updateUniversity);
-
-// Delete university
-router.delete('/:id', universityController.deleteUniversity);
-
-// Get universities by country
-router.get('/country/:country', universityController.getUniversitiesByCountry);
-
-// Search universities
-router.get('/search/:query', universityController.searchUniversities);
+// Admin-only routes (check admin by UID)
+router.post('/', checkAdminByUid, universityValidationRules, createUniversity);
+router.put('/:id', checkAdminByUid, updateUniversity);
+router.delete('/:id', checkAdminByUid, deleteUniversity);
 
 module.exports = router; 

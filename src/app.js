@@ -8,6 +8,8 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const courseRoutes = require('./routes/courseRoutes');
+const caseStudyRoutes = require('./routes/caseStudyRoutes');
+const responseRoutes = require('./routes/responseRoutes');
 const scholarshipRoutes = require('./routes/scholarshipRoutes');
 const userRoutes = require('./routes/userRoutes');
 const userProfileRoutes = require('./routes/userProfileRoutes');
@@ -27,8 +29,11 @@ const corsOptions = {
     'http://127.0.0.1:3001',
     'http://127.0.0.1:3002',
     // Add your production frontend URLs here
-    // 'https://your-frontend-domain.vercel.app',
-    // 'https://your-frontend-domain.netlify.app',
+    'https://edusmart-admin.vercel.app',
+    'https://edusmart-frontend.vercel.app',
+    'https://edusmart.vercel.app',
+    // Add any other frontend domains you might use
+    /^https:\/\/.*\.vercel\.app$/,
   ],
   credentials: true, // Allow cookies and credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -56,6 +61,8 @@ app.options('*', cors(corsOptions));
 app.use('/api/auth', authRoutes);
 app.use('/api', blogRoutes);
 app.use('/api', courseRoutes);
+app.use('/api/case-studies', caseStudyRoutes);
+app.use('/api', responseRoutes);
 app.use('/api', scholarshipRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/user', userProfileRoutes);
@@ -72,6 +79,8 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       blogs: '/api/blogs',
       courses: '/api/courses',
+      caseStudies: '/api/case-studies',
+      responses: '/api/responses',
       scholarships: '/api/scholarships',
       users: '/api/users',
       userProfile: '/api/user',

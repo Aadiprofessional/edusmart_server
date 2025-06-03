@@ -9,7 +9,7 @@ const {
   getCourseCategories,
   getCourseLevels
 } = require('../controllers/courseController');
-const { authenticateUser, validateUid, isAdmin } = require('../middlewares/auth');
+const { checkAdminByUid } = require('../middlewares/auth');
 const { courseValidationRules } = require('../middlewares/validators');
 
 // Public routes
@@ -18,9 +18,9 @@ router.get('/courses/:id', getCourseById);
 router.get('/course-categories', getCourseCategories);
 router.get('/course-levels', getCourseLevels);
 
-// Protected routes
-router.post('/courses', authenticateUser, isAdmin, validateUid, courseValidationRules, createCourse);
-router.put('/courses/:id', authenticateUser, validateUid, updateCourse);
-router.delete('/courses/:id', authenticateUser, validateUid, deleteCourse);
+// Admin-only routes (check admin by UID)
+router.post('/courses', checkAdminByUid, courseValidationRules, createCourse);
+router.put('/courses/:id', checkAdminByUid, updateCourse);
+router.delete('/courses/:id', checkAdminByUid, deleteCourse);
 
 module.exports = router; 

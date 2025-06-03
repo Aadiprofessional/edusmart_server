@@ -1,31 +1,50 @@
-const { createClient } = require('@supabase/supabase-js');
+const { supabase, supabaseAdmin } = require('../utils/supabase');
+const { v4: uuidv4 } = require('uuid');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-// Get all universities
+// Get all universities with pagination and filtering
 const getAllUniversities = async (req, res) => {
   try {
-    const { data: universities, error } = await supabase
+    const { page = 1, limit = 10, country, search } = req.query;
+    const offset = (page - 1) * limit;
+    
+    let query = supabase
       .from('universities')
-      .select('*')
-      .order('name', { ascending: true });
+      .select('*', { count: 'exact' });
+      
+    // Apply filters if provided
+    if (country) {
+      query = query.eq('country', country);
+    }
+    
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,city.ilike.%${search}%`);
+    }
+    
+    // Apply pagination
+    const { data: universities, error, count } = await query
+      .order('name', { ascending: true })
+      .range(offset, offset + limit - 1);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching universities:', error);
+      return res.status(500).json({ error: 'Failed to fetch universities' });
+    }
 
-    res.json({
-      success: true,
-      data: universities
+    // Calculate total pages
+    const totalPages = Math.ceil(count / limit);
+
+    res.status(200).json({
+      universities,
+      pagination: {
+        totalItems: count,
+        totalPages,
+        currentPage: parseInt(page),
+        itemsPerPage: parseInt(limit)
+      }
     });
   } catch (error) {
-    console.error('Error fetching universities:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch universities',
-      error: error.message
-    });
+    console.error('Get universities error:', error);
+    res.status(500).json({ error: 'Server error fetching universities' });
   }
 };
 
@@ -40,110 +59,183 @@ const getUniversityById = async (req, res) => {
       .eq('id', id)
       .single();
 
-    if (error) throw error;
-
-    if (!university) {
-      return res.status(404).json({
-        success: false,
-        message: 'University not found'
-      });
+    if (error) {
+      console.error('Error fetching university:', error);
+      return res.status(404).json({ error: 'University not found' });
     }
 
-    res.json({
-      success: true,
-      data: university
-    });
+    res.status(200).json({ university });
   } catch (error) {
-    console.error('Error fetching university:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch university',
-      error: error.message
-    });
+    console.error('Get university error:', error);
+    res.status(500).json({ error: 'Server error fetching university' });
   }
 };
 
-// Create new university
+// Create new university (Admin only)
 const createUniversity = async (req, res) => {
   try {
-    const universityData = req.body;
+    const {
+      uid,
+      name,
+      description,
+      country,
+      city,
+      website,
+      ranking,
+      tuition_fee,
+      acceptance_rate,
+      student_population,
+      established_year,
+      image,
+      programs_offered
+    } = req.body;
 
-    const { data: university, error } = await supabase
+    // The UID has already been verified by checkAdminByUid middleware
+    const createdBy = uid;
+
+    // Use admin client to bypass RLS for admin operations
+    const { data: university, error } = await supabaseAdmin
       .from('universities')
-      .insert([universityData])
+      .insert([
+        {
+          id: uuidv4(),
+          name,
+          description,
+          country,
+          city,
+          website,
+          ranking,
+          tuition_fee,
+          acceptance_rate,
+          student_population,
+          established_year,
+          image,
+          programs_offered,
+          created_by: createdBy,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      ])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating university:', error);
+      return res.status(500).json({ error: 'Failed to create university' });
+    }
 
     res.status(201).json({
-      success: true,
-      data: university,
-      message: 'University created successfully'
+      message: 'University created successfully',
+      university
     });
   } catch (error) {
-    console.error('Error creating university:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create university',
-      error: error.message
-    });
+    console.error('Create university error:', error);
+    res.status(500).json({ error: 'Server error creating university' });
   }
 };
 
-// Update university
+// Update university (Admin only)
 const updateUniversity = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const {
+      uid,
+      name,
+      description,
+      country,
+      city,
+      website,
+      ranking,
+      tuition_fee,
+      acceptance_rate,
+      student_population,
+      established_year,
+      image,
+      programs_offered
+    } = req.body;
 
-    const { data: university, error } = await supabase
+    // First check if the university exists
+    const { data: existingUniversity, error: fetchError } = await supabase
       .from('universities')
-      .update(updateData)
+      .select('created_by')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existingUniversity) {
+      return res.status(404).json({ error: 'University not found' });
+    }
+
+    // Update the university using admin client (admin can update any university)
+    const { data: updatedUniversity, error } = await supabaseAdmin
+      .from('universities')
+      .update({
+        name,
+        description,
+        country,
+        city,
+        website,
+        ranking,
+        tuition_fee,
+        acceptance_rate,
+        student_population,
+        established_year,
+        image,
+        programs_offered,
+        updated_at: new Date()
+      })
       .eq('id', id)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating university:', error);
+      return res.status(500).json({ error: 'Failed to update university' });
+    }
 
-    res.json({
-      success: true,
-      data: university,
-      message: 'University updated successfully'
+    res.status(200).json({
+      message: 'University updated successfully',
+      university: updatedUniversity
     });
   } catch (error) {
-    console.error('Error updating university:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update university',
-      error: error.message
-    });
+    console.error('Update university error:', error);
+    res.status(500).json({ error: 'Server error updating university' });
   }
 };
 
-// Delete university
+// Delete university (Admin only)
 const deleteUniversity = async (req, res) => {
   try {
     const { id } = req.params;
+    const { uid } = req.body;
 
-    const { error } = await supabase
+    // First check if the university exists
+    const { data: existingUniversity, error: fetchError } = await supabase
+      .from('universities')
+      .select('created_by')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existingUniversity) {
+      return res.status(404).json({ error: 'University not found' });
+    }
+
+    // Delete the university using admin client (admin can delete any university)
+    const { error } = await supabaseAdmin
       .from('universities')
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error deleting university:', error);
+      return res.status(500).json({ error: 'Failed to delete university' });
+    }
 
-    res.json({
-      success: true,
+    res.status(200).json({
       message: 'University deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting university:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete university',
-      error: error.message
-    });
+    console.error('Delete university error:', error);
+    res.status(500).json({ error: 'Server error deleting university' });
   }
 };
 
@@ -158,19 +250,15 @@ const getUniversitiesByCountry = async (req, res) => {
       .eq('country', country)
       .order('name', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching universities by country:', error);
+      return res.status(500).json({ error: 'Failed to fetch universities by country' });
+    }
 
-    res.json({
-      success: true,
-      data: universities
-    });
+    res.status(200).json({ universities });
   } catch (error) {
-    console.error('Error fetching universities by country:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch universities by country',
-      error: error.message
-    });
+    console.error('Get universities by country error:', error);
+    res.status(500).json({ error: 'Server error fetching universities by country' });
   }
 };
 
@@ -178,26 +266,61 @@ const getUniversitiesByCountry = async (req, res) => {
 const searchUniversities = async (req, res) => {
   try {
     const { query } = req.params;
+    const { country, minRanking, maxTuition } = req.query;
 
-    const { data: universities, error } = await supabase
+    let searchQuery = supabase
       .from('universities')
       .select('*')
-      .or(`name.ilike.%${query}%,country.ilike.%${query}%,city.ilike.%${query}%`)
-      .order('name', { ascending: true });
+      .or(`name.ilike.%${query}%,description.ilike.%${query}%,city.ilike.%${query}%`);
 
-    if (error) throw error;
+    // Apply additional filters
+    if (country) {
+      searchQuery = searchQuery.eq('country', country);
+    }
 
-    res.json({
-      success: true,
-      data: universities
-    });
+    if (minRanking) {
+      searchQuery = searchQuery.lte('ranking', minRanking);
+    }
+
+    if (maxTuition) {
+      searchQuery = searchQuery.lte('tuition_fee', maxTuition);
+    }
+
+    const { data: universities, error } = await searchQuery
+      .order('ranking', { ascending: true });
+
+    if (error) {
+      console.error('Error searching universities:', error);
+      return res.status(500).json({ error: 'Failed to search universities' });
+    }
+
+    res.status(200).json({ universities });
   } catch (error) {
-    console.error('Error searching universities:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to search universities',
-      error: error.message
-    });
+    console.error('Search universities error:', error);
+    res.status(500).json({ error: 'Server error searching universities' });
+  }
+};
+
+// Get university countries
+const getUniversityCountries = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('universities')
+      .select('country')
+      .order('country');
+
+    if (error) {
+      console.error('Error fetching university countries:', error);
+      return res.status(500).json({ error: 'Failed to fetch university countries' });
+    }
+
+    // Extract unique countries
+    const countries = [...new Set(data.map(university => university.country))];
+
+    res.status(200).json({ countries });
+  } catch (error) {
+    console.error('Get university countries error:', error);
+    res.status(500).json({ error: 'Server error fetching university countries' });
   }
 };
 
@@ -208,5 +331,6 @@ module.exports = {
   updateUniversity,
   deleteUniversity,
   getUniversitiesByCountry,
-  searchUniversities
+  searchUniversities,
+  getUniversityCountries
 }; 
