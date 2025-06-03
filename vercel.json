@@ -16,11 +16,5 @@
   "env": {
     "NODE_ENV": "production",
     "USE_IN_MEMORY_QUEUE": "true"
-  },
-  "functions": {
-    "api/**/*.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    }
   }
 } 
