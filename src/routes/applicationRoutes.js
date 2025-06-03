@@ -5,6 +5,12 @@ const applicationController = require('../controllers/applicationController');
 // Get all applications (admin only)
 router.get('/', applicationController.getAllApplications);
 
+// Get application statistics (must come before /:id route)
+router.get('/stats/overview', applicationController.getApplicationStats);
+
+// Get applications by user (must come before /:id route)
+router.get('/user/:userId', applicationController.getApplicationsByUser);
+
 // Get application by ID
 router.get('/:id', applicationController.getApplicationById);
 
@@ -17,13 +23,7 @@ router.put('/:id', applicationController.updateApplication);
 // Delete application
 router.delete('/:id', applicationController.deleteApplication);
 
-// Get applications by user
-router.get('/user/:userId', applicationController.getApplicationsByUser);
-
 // Update application status
 router.patch('/:id/status', applicationController.updateApplicationStatus);
-
-// Get application statistics
-router.get('/stats/overview', applicationController.getApplicationStats);
 
 module.exports = router; 

@@ -1,4 +1,4 @@
-const supabase = require('../utils/supabase');
+const { supabase, supabaseAdmin } = require('../utils/supabase');
 const { v4: uuidv4 } = require('uuid');
 
 // Get all blogs with pagination and filtering
@@ -59,7 +59,7 @@ const getBlogById = async (req, res) => {
     
     const { data: blog, error } = await supabase
       .from('blogs')
-      .select('*, author:profiles(name, avatar_url, title)')
+      .select('*, author:profiles(name, avatar_url)')
       .eq('id', id)
       .single();
       
@@ -75,21 +75,24 @@ const getBlogById = async (req, res) => {
   }
 };
 
-// Create a new blog
+// Create a new blog (Admin only)
 const createBlog = async (req, res) => {
   try {
     const { 
+      uid,
       title, 
       content, 
       excerpt, 
       category, 
       tags, 
-      image, 
-      uid 
+      image
     } = req.body;
     
-    // Create a new blog entry
-    const { data: blog, error } = await supabase
+    // The UID has already been verified by checkAdminByUid middleware
+    const authorId = uid;
+    
+    // Use admin client to bypass RLS for admin operations
+    const { data: blog, error } = await supabaseAdmin
       .from('blogs')
       .insert([
         {
@@ -100,7 +103,7 @@ const createBlog = async (req, res) => {
           category,
           tags,
           image,
-          author_id: uid,
+          author_id: authorId,
           created_at: new Date(),
           updated_at: new Date()
         }
@@ -123,18 +126,18 @@ const createBlog = async (req, res) => {
   }
 };
 
-// Update an existing blog
+// Update an existing blog (Admin only)
 const updateBlog = async (req, res) => {
   try {
     const { id } = req.params;
     const { 
+      uid,
       title, 
       content, 
       excerpt, 
       category, 
       tags, 
-      image, 
-      uid 
+      image
     } = req.body;
     
     // First check if the blog exists
@@ -148,13 +151,8 @@ const updateBlog = async (req, res) => {
       return res.status(404).json({ error: 'Blog not found' });
     }
     
-    // Check if user is the author or has admin role
-    if (existingBlog.author_id !== uid && req.userRole !== 'admin') {
-      return res.status(403).json({ error: 'You are not authorized to update this blog' });
-    }
-    
-    // Update the blog
-    const { data: updatedBlog, error } = await supabase
+    // Update the blog using admin client (admin can update any blog)
+    const { data: updatedBlog, error } = await supabaseAdmin
       .from('blogs')
       .update({
         title,
@@ -184,7 +182,7 @@ const updateBlog = async (req, res) => {
   }
 };
 
-// Delete a blog
+// Delete a blog (Admin only)
 const deleteBlog = async (req, res) => {
   try {
     const { id } = req.params;
@@ -201,13 +199,8 @@ const deleteBlog = async (req, res) => {
       return res.status(404).json({ error: 'Blog not found' });
     }
     
-    // Check if user is the author or has admin role
-    if (existingBlog.author_id !== uid && req.userRole !== 'admin') {
-      return res.status(403).json({ error: 'You are not authorized to delete this blog' });
-    }
-    
-    // Delete the blog
-    const { error } = await supabase
+    // Delete the blog using admin client (admin can delete any blog)
+    const { error } = await supabaseAdmin
       .from('blogs')
       .delete()
       .eq('id', id);

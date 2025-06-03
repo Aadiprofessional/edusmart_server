@@ -1,7 +1,6 @@
-const jwt = require('jsonwebtoken');
-const supabase = require('../utils/supabase');
+const { supabase, supabaseAdmin } = require('../utils/supabase');
 
-// Middleware to validate user authentication
+// Middleware to validate user authentication using Supabase Auth
 const authenticateUser = async (req, res, next) => {
   try {
     // Get token from header
@@ -14,10 +13,30 @@ const authenticateUser = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.userId = decoded.userId;
-      req.userRole = decoded.role;
+      // Verify token with Supabase Auth
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+
+      if (error || !user) {
+        return res.status(401).json({ error: 'Unauthorized - Invalid token' });
+      }
+
+      // Get user profile to get role information
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        return res.status(404).json({ error: 'User profile not found' });
+      }
+
+      // Attach user info to request
+      req.user = user;
+      req.userId = user.id;
+      req.userEmail = user.email;
+      req.userRole = profile.role;
+      req.userProfile = profile;
       next();
     } catch (error) {
       return res.status(401).json({ error: 'Unauthorized - Invalid token' });
@@ -28,7 +47,7 @@ const authenticateUser = async (req, res, next) => {
   }
 };
 
-// Middleware to ensure UID is provided in the request body
+// Middleware to ensure UID is provided in the request body (for backward compatibility)
 const validateUid = (req, res, next) => {
   if (!req.body.uid) {
     return res.status(400).json({ error: 'User ID (uid) is required' });
@@ -37,32 +56,52 @@ const validateUid = (req, res, next) => {
 };
 
 // Middleware to check if user has admin privileges
-const isAdmin = async (req, res, next) => {
-  try {
-    // Get user details from Supabase
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', req.userId)
-      .single();
+const isAdmin = (req, res, next) => {
+  if (req.userRole !== 'admin') {
+    return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+  }
+  next();
+};
 
-    if (error || !data) {
+// NEW: Check if provided UID has admin role (no authentication required)
+const checkAdminByUid = async (req, res, next) => {
+  try {
+    const { uid } = req.body;
+    
+    if (!uid) {
+      return res.status(400).json({ error: 'UID is required' });
+    }
+    
+    // Get user profile from database using admin client
+    const { data: profile, error } = await supabaseAdmin
+      .from('profiles')
+      .select('id, role, name, email')
+      .eq('id', uid)
+      .single();
+    
+    if (error || !profile) {
       return res.status(404).json({ error: 'User not found' });
     }
-
-    if (data.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+    
+    if (profile.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
     }
-
+    
+    // Attach user info to request
+    req.userId = profile.id;
+    req.userRole = profile.role;
+    req.userProfile = profile;
+    
     next();
   } catch (error) {
     console.error('Admin check error:', error);
-    return res.status(500).json({ error: 'Server error during admin verification' });
+    res.status(500).json({ error: 'Admin verification failed' });
   }
 };
 
 module.exports = {
   authenticateUser,
   validateUid,
-  isAdmin
+  isAdmin,
+  checkAdminByUid
 }; 

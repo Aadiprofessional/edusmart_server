@@ -9,7 +9,7 @@ const {
   getBlogCategories,
   getBlogTags
 } = require('../controllers/blogController');
-const { authenticateUser, validateUid, isAdmin } = require('../middlewares/auth');
+const { checkAdminByUid } = require('../middlewares/auth');
 const { blogValidationRules } = require('../middlewares/validators');
 
 // Public routes
@@ -18,9 +18,9 @@ router.get('/blogs/:id', getBlogById);
 router.get('/blog-categories', getBlogCategories);
 router.get('/blog-tags', getBlogTags);
 
-// Protected routes
-router.post('/blogs', authenticateUser, isAdmin, validateUid, blogValidationRules, createBlog);
-router.put('/blogs/:id', authenticateUser, validateUid, updateBlog);
-router.delete('/blogs/:id', authenticateUser, validateUid, deleteBlog);
+// Admin-only routes (check admin by UID)
+router.post('/blogs', checkAdminByUid, blogValidationRules, createBlog);
+router.put('/blogs/:id', checkAdminByUid, updateBlog);
+router.delete('/blogs/:id', checkAdminByUid, deleteBlog);
 
 module.exports = router; 

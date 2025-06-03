@@ -10,6 +10,7 @@ const blogRoutes = require('./routes/blogRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 const scholarshipRoutes = require('./routes/scholarshipRoutes');
 const userRoutes = require('./routes/userRoutes');
+const userProfileRoutes = require('./routes/userProfileRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const universityRoutes = require('./routes/universityRoutes');
 
@@ -57,6 +58,7 @@ app.use('/api', blogRoutes);
 app.use('/api', courseRoutes);
 app.use('/api', scholarshipRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/user', userProfileRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/universities', universityRoutes);
 
@@ -72,6 +74,7 @@ app.get('/', (req, res) => {
       courses: '/api/courses',
       scholarships: '/api/scholarships',
       users: '/api/users',
+      userProfile: '/api/user',
       applications: '/api/applications',
       universities: '/api/universities'
     }

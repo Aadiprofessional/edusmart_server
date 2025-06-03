@@ -11,6 +11,12 @@ const validateRequest = (req, res, next) => {
 
 // Blog validation rules
 const blogValidationRules = [
+  body('uid')
+    .isString()
+    .withMessage('User ID must be a string')
+    .notEmpty()
+    .withMessage('User ID is required'),
+
   body('title')
     .isString()
     .trim()
@@ -46,20 +52,21 @@ const blogValidationRules = [
     .withMessage('Tags must be an array'),
   
   body('image')
+    .optional()
     .isURL()
     .withMessage('Image must be a valid URL'),
-  
-  body('uid')
-    .isString()
-    .withMessage('User ID must be a string')
-    .notEmpty()
-    .withMessage('User ID is required'),
   
   validateRequest
 ];
 
 // Course validation rules
 const courseValidationRules = [
+  body('uid')
+    .isString()
+    .withMessage('User ID must be a string')
+    .notEmpty()
+    .withMessage('User ID is required'),
+
   body('title')
     .isString()
     .trim()
@@ -97,20 +104,21 @@ const courseValidationRules = [
     .withMessage('Price must be a number'),
   
   body('image')
+    .optional()
     .isURL()
     .withMessage('Image must be a valid URL'),
-  
-  body('uid')
-    .isString()
-    .withMessage('User ID must be a string')
-    .notEmpty()
-    .withMessage('User ID is required'),
   
   validateRequest
 ];
 
 // Scholarship validation rules
 const scholarshipValidationRules = [
+  body('uid')
+    .isString()
+    .withMessage('User ID must be a string')
+    .notEmpty()
+    .withMessage('User ID is required'),
+
   body('title')
     .isString()
     .trim()
@@ -128,30 +136,34 @@ const scholarshipValidationRules = [
     .withMessage('Description must be at least 50 characters'),
   
   body('amount')
+    .optional()
     .isNumeric()
     .withMessage('Amount must be a number'),
   
   body('eligibility')
+    .optional()
     .isString()
     .withMessage('Eligibility criteria must be a string'),
   
   body('deadline')
+    .optional()
     .isISO8601()
     .withMessage('Deadline must be a valid date'),
   
   body('university')
+    .optional()
     .isString()
     .withMessage('University must be a string'),
   
   body('country')
+    .optional()
     .isString()
     .withMessage('Country must be a string'),
   
-  body('uid')
-    .isString()
-    .withMessage('User ID must be a string')
-    .notEmpty()
-    .withMessage('User ID is required'),
+  body('application_link')
+    .optional()
+    .isURL()
+    .withMessage('Application link must be a valid URL'),
   
   validateRequest
 ];

@@ -1,4 +1,4 @@
-const supabase = require('../utils/supabase');
+const { supabase, supabaseAdmin } = require('../utils/supabase');
 const { v4: uuidv4 } = require('uuid');
 
 // Get all scholarships with pagination and filtering
@@ -75,10 +75,11 @@ const getScholarshipById = async (req, res) => {
   }
 };
 
-// Create a new scholarship
+// Create a new scholarship (Admin only)
 const createScholarship = async (req, res) => {
   try {
     const { 
+      uid,
       title, 
       description, 
       amount, 
@@ -87,12 +88,14 @@ const createScholarship = async (req, res) => {
       university, 
       country, 
       application_link,
-      requirements,
-      uid 
+      requirements
     } = req.body;
     
-    // Create a new scholarship entry
-    const { data: scholarship, error } = await supabase
+    // The UID has already been verified by checkAdminByUid middleware
+    const createdBy = uid;
+    
+    // Use admin client to bypass RLS for admin operations
+    const { data: scholarship, error } = await supabaseAdmin
       .from('scholarships')
       .insert([
         {
@@ -106,7 +109,7 @@ const createScholarship = async (req, res) => {
           country,
           application_link,
           requirements,
-          created_by: uid,
+          created_by: createdBy,
           created_at: new Date(),
           updated_at: new Date()
         }
@@ -129,11 +132,12 @@ const createScholarship = async (req, res) => {
   }
 };
 
-// Update an existing scholarship
+// Update an existing scholarship (Admin only)
 const updateScholarship = async (req, res) => {
   try {
     const { id } = req.params;
     const { 
+      uid,
       title, 
       description, 
       amount, 
@@ -142,8 +146,7 @@ const updateScholarship = async (req, res) => {
       university, 
       country, 
       application_link,
-      requirements,
-      uid 
+      requirements
     } = req.body;
     
     // First check if the scholarship exists
@@ -157,13 +160,8 @@ const updateScholarship = async (req, res) => {
       return res.status(404).json({ error: 'Scholarship not found' });
     }
     
-    // Check if user is the creator or has admin role
-    if (existingScholarship.created_by !== uid && req.userRole !== 'admin') {
-      return res.status(403).json({ error: 'You are not authorized to update this scholarship' });
-    }
-    
-    // Update the scholarship
-    const { data: updatedScholarship, error } = await supabase
+    // Update the scholarship using admin client (admin can update any scholarship)
+    const { data: updatedScholarship, error } = await supabaseAdmin
       .from('scholarships')
       .update({
         title,
@@ -196,7 +194,7 @@ const updateScholarship = async (req, res) => {
   }
 };
 
-// Delete a scholarship
+// Delete a scholarship (Admin only)
 const deleteScholarship = async (req, res) => {
   try {
     const { id } = req.params;
@@ -213,13 +211,8 @@ const deleteScholarship = async (req, res) => {
       return res.status(404).json({ error: 'Scholarship not found' });
     }
     
-    // Check if user is the creator or has admin role
-    if (existingScholarship.created_by !== uid && req.userRole !== 'admin') {
-      return res.status(403).json({ error: 'You are not authorized to delete this scholarship' });
-    }
-    
-    // Delete the scholarship
-    const { error } = await supabase
+    // Delete the scholarship using admin client (admin can delete any scholarship)
+    const { error } = await supabaseAdmin
       .from('scholarships')
       .delete()
       .eq('id', id);
@@ -238,7 +231,7 @@ const deleteScholarship = async (req, res) => {
   }
 };
 
-// Get countries with scholarships
+// Get scholarship countries
 const getScholarshipCountries = async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -261,7 +254,7 @@ const getScholarshipCountries = async (req, res) => {
   }
 };
 
-// Get universities with scholarships
+// Get scholarship universities
 const getScholarshipUniversities = async (req, res) => {
   try {
     const { data, error } = await supabase
