@@ -3,14 +3,14 @@
   "name": "edusmart-api",
   "builds": [
     {
-      "src": "app.js",
+      "src": "src/app.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/app.js"
+      "dest": "/src/app.js"
     }
   ],
   "env": {
