@@ -1,23 +1,26 @@
 {
   "version": 2,
+  "name": "edusmart-api",
   "builds": [
     {
-      "src": "src/app.js",
+      "src": "app.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "src/app.js"
+      "dest": "/app.js"
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "USE_IN_MEMORY_QUEUE": "true"
   },
   "functions": {
-    "src/app.js": {
-      "maxDuration": 30
+    "api/**/*.js": {
+      "memory": 1024,
+      "maxDuration": 60
     }
   }
 } 
