@@ -32,8 +32,11 @@ const corsOptions = {
     'https://edusmart-admin.vercel.app',
     'https://edusmart-frontend.vercel.app',
     'https://edusmart.vercel.app',
+    'https://edusmart-admin.pages.dev',
+    'https://edusmart-9z4.pages.dev',
     // Add any other frontend domains you might use
     /^https:\/\/.*\.vercel\.app$/,
+    /^https:\/\/.*\.pages\.dev$/,
   ],
   credentials: true, // Allow cookies and credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -73,7 +76,7 @@ app.use('/api/universities', universityRoutes);
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to EduSmart API',
-    version: '1.0.0',
+    version: '1.0.1',
     status: 'online',
     endpoints: {
       auth: '/api/auth',
