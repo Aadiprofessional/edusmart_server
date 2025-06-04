@@ -12,7 +12,7 @@ const {
   getCaseStudyFields
 } = require('../controllers/caseStudyController');
 const { checkAdminByUid } = require('../middlewares/auth');
-const { validateCaseStudy } = require('../middlewares/validators');
+const { caseStudyValidationRules } = require('../middlewares/validators');
 
 // Public routes
 router.get('/', getCaseStudies);
@@ -23,8 +23,8 @@ router.get('/fields', getCaseStudyFields);
 router.get('/:id', getCaseStudyById);
 
 // Admin routes (require authentication)
-router.post('/', checkAdminByUid, validateCaseStudy, createCaseStudy);
-router.put('/:id', checkAdminByUid, validateCaseStudy, updateCaseStudy);
+router.post('/', checkAdminByUid, caseStudyValidationRules, createCaseStudy);
+router.put('/:id', checkAdminByUid, caseStudyValidationRules, updateCaseStudy);
 router.delete('/:id', checkAdminByUid, deleteCaseStudy);
 
 module.exports = router; 
