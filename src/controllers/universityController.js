@@ -1,10 +1,58 @@
 const { supabase, supabaseAdmin } = require('../utils/supabase');
 const { v4: uuidv4 } = require('uuid');
 
+// Helper function to generate unique slug
+const generateUniqueSlug = async (name) => {
+  const baseSlug = name.toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single
+    .trim('-'); // Remove leading/trailing hyphens
+
+  let slug = baseSlug;
+  let counter = 1;
+
+  // Check if slug exists and generate unique one
+  while (true) {
+    const { data: existing } = await supabase
+      .from('universities')
+      .select('id')
+      .eq('slug', slug)
+      .single();
+
+    if (!existing) {
+      break; // Slug is unique
+    }
+
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+
+  return slug;
+};
+
 // Get all universities with pagination and filtering
 const getAllUniversities = async (req, res) => {
   try {
-    const { page = 1, limit = 10, country, search } = req.query;
+    const { 
+      page = 1, 
+      limit = 10, 
+      country, 
+      search, 
+      region,
+      state,
+      type,
+      major,
+      rankingType,
+      qsRankingRange,
+      rankingYear,
+      admissionDifficulty,
+      campusType,
+      studentPopulation,
+      acceptanceRate,
+      showOnlyOpenApplications
+    } = req.query;
+    
     const offset = (page - 1) * limit;
     
     let query = supabase
@@ -15,14 +63,79 @@ const getAllUniversities = async (req, res) => {
     if (country) {
       query = query.eq('country', country);
     }
+
+    if (state) {
+      query = query.eq('state', state);
+    }
+
+    if (type) {
+      query = query.eq('type', type);
+    }
+
+    if (region) {
+      query = query.eq('region', region);
+    }
+
+    if (major && major !== '') {
+      query = query.contains('programs_offered', [major]);
+    }
+
+    if (rankingType) {
+      query = query.eq('ranking_type', rankingType);
+    }
+
+    if (qsRankingRange) {
+      const maxRanking = parseInt(qsRankingRange);
+      if (!isNaN(maxRanking)) {
+        query = query.lte('ranking', maxRanking);
+      }
+    }
+
+    if (rankingYear) {
+      query = query.eq('ranking_year', parseInt(rankingYear));
+    }
+
+    if (campusType) {
+      query = query.eq('campus_type', campusType);
+    }
+
+    // Student population filter
+    if (studentPopulation) {
+      switch (studentPopulation) {
+        case 'small':
+          query = query.lte('student_population', 15000);
+          break;
+        case 'medium':
+          query = query.gte('student_population', 15001).lte('student_population', 40000);
+          break;
+        case 'large':
+          query = query.gte('student_population', 40001);
+          break;
+      }
+    }
+
+    // Acceptance rate filter
+    if (acceptanceRate) {
+      switch (acceptanceRate) {
+        case 'low':
+          query = query.lte('acceptance_rate', 10);
+          break;
+        case 'medium':
+          query = query.gte('acceptance_rate', 11).lte('acceptance_rate', 50);
+          break;
+        case 'high':
+          query = query.gte('acceptance_rate', 51);
+          break;
+      }
+    }
     
     if (search) {
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,city.ilike.%${search}%`);
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,city.ilike.%${search}%,programs_offered.cs.{${search}}`);
     }
     
     // Apply pagination
     const { data: universities, error, count } = await query
-      .order('name', { ascending: true })
+      .order('ranking', { ascending: true, nullsLast: true })
       .range(offset, offset + limit - 1);
 
     if (error) {
@@ -80,18 +193,39 @@ const createUniversity = async (req, res) => {
       description,
       country,
       city,
+      state,
+      address,
       website,
+      contact_email,
+      contact_phone,
+      established_year,
+      type,
       ranking,
       tuition_fee,
+      application_fee,
       acceptance_rate,
       student_population,
-      established_year,
+      faculty_count,
+      programs_offered,
+      facilities,
       image,
-      programs_offered
+      logo,
+      gallery,
+      campus_size,
+      campus_type,
+      accreditation,
+      notable_alumni,
+      keywords,
+      region,
+      ranking_type,
+      ranking_year
     } = req.body;
 
     // The UID has already been verified by checkAdminByUid middleware
     const createdBy = uid;
+
+    // Generate unique slug
+    const slug = await generateUniqueSlug(name);
 
     // Use admin client to bypass RLS for admin operations
     const { data: university, error } = await supabaseAdmin
@@ -103,14 +237,36 @@ const createUniversity = async (req, res) => {
           description,
           country,
           city,
+          state,
+          address,
           website,
-          ranking,
-          tuition_fee,
-          acceptance_rate,
-          student_population,
-          established_year,
+          contact_email,
+          contact_phone,
+          established_year: established_year ? parseInt(established_year) : null,
+          type,
+          ranking: ranking ? parseInt(ranking) : null,
+          tuition_fee: tuition_fee ? parseFloat(tuition_fee) : null,
+          application_fee: application_fee ? parseFloat(application_fee) : null,
+          acceptance_rate: acceptance_rate ? parseFloat(acceptance_rate) : null,
+          student_population: student_population ? parseInt(student_population) : null,
+          faculty_count: faculty_count ? parseInt(faculty_count) : null,
+          programs_offered: programs_offered || [],
+          facilities: facilities || [],
           image,
-          programs_offered,
+          logo,
+          gallery: gallery || [],
+          campus_size,
+          campus_type,
+          accreditation,
+          notable_alumni: notable_alumni || [],
+          slug,
+          keywords: keywords || [],
+          region,
+          ranking_type,
+          ranking_year: ranking_year ? parseInt(ranking_year) : null,
+          status: 'active',
+          featured: false,
+          verified: false,
           created_by: createdBy,
           created_at: new Date(),
           updated_at: new Date()
@@ -144,25 +300,49 @@ const updateUniversity = async (req, res) => {
       description,
       country,
       city,
+      state,
+      address,
       website,
+      contact_email,
+      contact_phone,
+      established_year,
+      type,
       ranking,
       tuition_fee,
+      application_fee,
       acceptance_rate,
       student_population,
-      established_year,
+      faculty_count,
+      programs_offered,
+      facilities,
       image,
-      programs_offered
+      logo,
+      gallery,
+      campus_size,
+      campus_type,
+      accreditation,
+      notable_alumni,
+      keywords,
+      region,
+      ranking_type,
+      ranking_year
     } = req.body;
 
     // First check if the university exists
     const { data: existingUniversity, error: fetchError } = await supabase
       .from('universities')
-      .select('created_by')
+      .select('created_by, slug, name')
       .eq('id', id)
       .single();
 
     if (fetchError || !existingUniversity) {
       return res.status(404).json({ error: 'University not found' });
+    }
+
+    // Generate new slug if name changed
+    let slug = existingUniversity.slug;
+    if (name && name !== existingUniversity.name) {
+      slug = await generateUniqueSlug(name);
     }
 
     // Update the university using admin client (admin can update any university)
@@ -173,14 +353,33 @@ const updateUniversity = async (req, res) => {
         description,
         country,
         city,
+        state,
+        address,
         website,
-        ranking,
-        tuition_fee,
-        acceptance_rate,
-        student_population,
-        established_year,
+        contact_email,
+        contact_phone,
+        established_year: established_year ? parseInt(established_year) : null,
+        type,
+        ranking: ranking ? parseInt(ranking) : null,
+        tuition_fee: tuition_fee ? parseFloat(tuition_fee) : null,
+        application_fee: application_fee ? parseFloat(application_fee) : null,
+        acceptance_rate: acceptance_rate ? parseFloat(acceptance_rate) : null,
+        student_population: student_population ? parseInt(student_population) : null,
+        faculty_count: faculty_count ? parseInt(faculty_count) : null,
+        programs_offered: programs_offered || [],
+        facilities: facilities || [],
         image,
-        programs_offered,
+        logo,
+        gallery: gallery || [],
+        campus_size,
+        campus_type,
+        accreditation,
+        notable_alumni: notable_alumni || [],
+        slug,
+        keywords: keywords || [],
+        region,
+        ranking_type,
+        ranking_year: ranking_year ? parseInt(ranking_year) : null,
         updated_at: new Date()
       })
       .eq('id', id)

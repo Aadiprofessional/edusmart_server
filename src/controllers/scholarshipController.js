@@ -88,7 +88,8 @@ const createScholarship = async (req, res) => {
       university, 
       country, 
       application_link,
-      requirements
+      requirements,
+      image
     } = req.body;
     
     // The UID has already been verified by checkAdminByUid middleware
@@ -109,6 +110,7 @@ const createScholarship = async (req, res) => {
           country,
           application_link,
           requirements,
+          image,
           created_by: createdBy,
           created_at: new Date(),
           updated_at: new Date()
@@ -146,7 +148,8 @@ const updateScholarship = async (req, res) => {
       university, 
       country, 
       application_link,
-      requirements
+      requirements,
+      image
     } = req.body;
     
     // First check if the scholarship exists
@@ -173,6 +176,7 @@ const updateScholarship = async (req, res) => {
         country,
         application_link,
         requirements,
+        image,
         updated_at: new Date()
       })
       .eq('id', id)
