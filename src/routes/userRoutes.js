@@ -17,7 +17,4 @@ router.put('/:id', userController.updateUser);
 // Delete user
 router.delete('/:id', userController.deleteUser);
 
-// Get user applications
-router.get('/:id/applications', userController.getUserApplications);
-
 module.exports = router; 

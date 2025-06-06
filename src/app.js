@@ -13,7 +13,6 @@ const responseRoutes = require('./routes/responseRoutes');
 const scholarshipRoutes = require('./routes/scholarshipRoutes');
 const userRoutes = require('./routes/userRoutes');
 const userProfileRoutes = require('./routes/userProfileRoutes');
-const applicationRoutes = require('./routes/applicationRoutes');
 const universityRoutes = require('./routes/universityRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 
@@ -70,7 +69,6 @@ app.use('/api', responseRoutes);
 app.use('/api', scholarshipRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/user', userProfileRoutes);
-app.use('/api/applications', applicationRoutes);
 app.use('/api/universities', universityRoutes);
 app.use('/api/uploads', uploadRoutes);
 
@@ -89,7 +87,6 @@ app.get('/', (req, res) => {
       scholarships: '/api/scholarships',
       users: '/api/users',
       userProfile: '/api/user',
-      applications: '/api/applications',
       universities: '/api/universities',
       uploads: '/api/uploads'
     }
