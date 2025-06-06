@@ -310,30 +310,50 @@ const getCourseSections = async (req, res) => {
     const { courseId } = req.params;
     const { uid } = req.query;
     
+    console.log('getCourseSections called with:', { courseId, uid });
+    
     // If UID is provided, check if user is enrolled or is admin
     if (uid) {
       // Check if user is admin
-      const { data: profile } = await supabaseAdmin
+      const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
         .select('role')
         .eq('id', uid)
         .single();
       
+      console.log('Profile check result:', { profile, profileError });
+      
       const isAdmin = profile?.role === 'admin';
+      console.log('Is admin:', isAdmin);
       
       // If not admin, check if user is enrolled
       if (!isAdmin) {
-        const { data: enrollment } = await supabase
+        const { data: enrollment, error: enrollmentError } = await supabase
           .from('course_enrollments')
-          .select('id')
+          .select('id, status')
           .eq('user_id', uid)
           .eq('course_id', courseId)
           .eq('status', 'active')
           .single();
         
+        console.log('Enrollment check result:', { enrollment, enrollmentError });
+        
         if (!enrollment) {
-          return res.status(403).json({ error: 'Must be enrolled to access course content' });
+          console.log('Access denied: User not enrolled and not admin');
+          return res.status(403).json({ 
+            error: 'Must be enrolled to access course content',
+            debug: {
+              uid,
+              courseId,
+              isAdmin,
+              enrollmentFound: false
+            }
+          });
         }
+        
+        console.log('Access granted: User is enrolled');
+      } else {
+        console.log('Access granted: User is admin');
       }
     }
     
@@ -359,6 +379,8 @@ const getCourseSections = async (req, res) => {
       console.error('Error fetching sections:', error);
       return res.status(500).json({ error: 'Failed to fetch sections' });
     }
+    
+    console.log('Sections fetched successfully:', sections?.length || 0);
     
     res.status(200).json({
       success: true,
