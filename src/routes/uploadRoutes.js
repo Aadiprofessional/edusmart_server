@@ -1,26 +1,11 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { supabaseAdmin } = require('../utils/supabase');
+const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for memory storage (we'll upload to Supabase instead of disk)
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -37,22 +22,44 @@ const upload = multer({
   }
 });
 
-// Upload single image
-router.post('/image', upload.single('image'), (req, res) => {
+// Upload single image to Supabase storage
+router.post('/image', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Return the file URL
-    const fileUrl = `/uploads/${req.file.filename}`;
-    
+    // Generate unique filename
+    const fileExtension = req.file.originalname.split('.').pop();
+    const fileName = `${uuidv4()}.${fileExtension}`;
+    const filePath = `images/${fileName}`;
+
+    // Upload to Supabase storage using admin client
+    const { data, error } = await supabaseAdmin.storage
+      .from('university-images')
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      return res.status(500).json({ error: 'Failed to upload to storage', details: error.message });
+    }
+
+    // Get public URL using admin client
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('university-images')
+      .getPublicUrl(filePath);
+
     res.json({
       success: true,
-      url: fileUrl,
-      filename: req.file.filename,
+      url: publicUrl,
+      filename: fileName,
       originalName: req.file.originalname,
-      size: req.file.size
+      size: req.file.size,
+      path: filePath
     });
   } catch (error) {
     console.error('Upload error:', error);
@@ -60,7 +67,122 @@ router.post('/image', upload.single('image'), (req, res) => {
   }
 });
 
-// Serve uploaded files
-router.use('/files', express.static(uploadsDir));
+// Upload logo specifically (organized in logos folder)
+router.post('/logo', upload.single('logo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Generate unique filename
+    const fileExtension = req.file.originalname.split('.').pop();
+    const fileName = `${uuidv4()}.${fileExtension}`;
+    const filePath = `logos/${fileName}`;
+
+    // Upload to Supabase storage using admin client
+    const { data, error } = await supabaseAdmin.storage
+      .from('university-images')
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      return res.status(500).json({ error: 'Failed to upload to storage', details: error.message });
+    }
+
+    // Get public URL using admin client
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('university-images')
+      .getPublicUrl(filePath);
+
+    res.json({
+      success: true,
+      url: publicUrl,
+      filename: fileName,
+      originalName: req.file.originalname,
+      size: req.file.size,
+      path: filePath
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Failed to upload file' });
+  }
+});
+
+// Upload multiple images (gallery)
+router.post('/gallery', upload.array('images', 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    const uploadPromises = req.files.map(async (file) => {
+      const fileExtension = file.originalname.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExtension}`;
+      const filePath = `gallery/${fileName}`;
+
+      const { data, error } = await supabaseAdmin.storage
+        .from('university-images')
+        .upload(filePath, file.buffer, {
+          contentType: file.mimetype,
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabaseAdmin.storage
+        .from('university-images')
+        .getPublicUrl(filePath);
+
+      return {
+        url: publicUrl,
+        filename: fileName,
+        originalName: file.originalname,
+        size: file.size,
+        path: filePath
+      };
+    });
+
+    const uploadResults = await Promise.all(uploadPromises);
+
+    res.json({
+      success: true,
+      files: uploadResults
+    });
+  } catch (error) {
+    console.error('Gallery upload error:', error);
+    res.status(500).json({ error: 'Failed to upload gallery images' });
+  }
+});
+
+// Delete image from Supabase storage
+router.delete('/image/:path(*)', async (req, res) => {
+  try {
+    const filePath = req.params.path;
+
+    const { error } = await supabaseAdmin.storage
+      .from('university-images')
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Delete error:', error);
+      return res.status(500).json({ error: 'Failed to delete file' });
+    }
+
+    res.json({
+      success: true,
+      message: 'File deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({ error: 'Failed to delete file' });
+  }
+});
 
 module.exports = router; 

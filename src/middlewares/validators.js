@@ -328,6 +328,114 @@ const universityValidationRules = [
     .optional()
     .isArray()
     .withMessage('Programs offered must be an array'),
+
+  // New admission requirements validation
+  body('min_gpa_required')
+    .optional()
+    .isFloat({ min: 0, max: 4.0 })
+    .withMessage('Minimum GPA must be between 0 and 4.0'),
+
+  body('sat_score_required')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage('SAT score must be a string'),
+
+  body('act_score_required')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage('ACT score must be a string'),
+
+  body('ielts_score_required')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage('IELTS score must be a string'),
+
+  body('toefl_score_required')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage('TOEFL score must be a string'),
+
+  body('gre_score_required')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage('GRE score must be a string'),
+
+  body('gmat_score_required')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage('GMAT score must be a string'),
+
+  // Application deadlines validation
+  body('application_deadline_fall')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage('Fall application deadline must be a string'),
+
+  body('application_deadline_spring')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage('Spring application deadline must be a string'),
+
+  body('application_deadline_summer')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage('Summer application deadline must be a string'),
+
+  // Financial information validation
+  body('tuition_fee_graduate')
+    .optional()
+    .isNumeric()
+    .withMessage('Graduate tuition fee must be a number'),
+
+  body('scholarship_available')
+    .optional()
+    .isBoolean()
+    .withMessage('Scholarship availability must be a boolean'),
+
+  body('financial_aid_available')
+    .optional()
+    .isBoolean()
+    .withMessage('Financial aid availability must be a boolean'),
+
+  // Additional admission requirements validation
+  body('application_requirements')
+    .optional()
+    .isArray()
+    .withMessage('Application requirements must be an array'),
+
+  body('admission_essay_required')
+    .optional()
+    .isBoolean()
+    .withMessage('Admission essay requirement must be a boolean'),
+
+  body('letters_of_recommendation_required')
+    .optional()
+    .isNumeric()
+    .withMessage('Letters of recommendation required must be a number'),
+
+  body('interview_required')
+    .optional()
+    .isBoolean()
+    .withMessage('Interview requirement must be a boolean'),
+
+  body('work_experience_required')
+    .optional()
+    .isBoolean()
+    .withMessage('Work experience requirement must be a boolean'),
+
+  body('portfolio_required')
+    .optional()
+    .isBoolean()
+    .withMessage('Portfolio requirement must be a boolean'),
   
   validateRequest
 ];

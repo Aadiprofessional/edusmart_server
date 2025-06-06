@@ -218,7 +218,30 @@ const createUniversity = async (req, res) => {
       keywords,
       region,
       ranking_type,
-      ranking_year
+      ranking_year,
+      // New admission requirements fields
+      min_gpa_required,
+      sat_score_required,
+      act_score_required,
+      ielts_score_required,
+      toefl_score_required,
+      gre_score_required,
+      gmat_score_required,
+      // Application deadlines
+      application_deadline_fall,
+      application_deadline_spring,
+      application_deadline_summer,
+      // Financial information
+      tuition_fee_graduate,
+      scholarship_available,
+      financial_aid_available,
+      // Additional admission requirements
+      application_requirements,
+      admission_essay_required,
+      letters_of_recommendation_required,
+      interview_required,
+      work_experience_required,
+      portfolio_required
     } = req.body;
 
     // The UID has already been verified by checkAdminByUid middleware
@@ -264,6 +287,29 @@ const createUniversity = async (req, res) => {
           region,
           ranking_type,
           ranking_year: ranking_year ? parseInt(ranking_year) : null,
+          // New admission requirements fields
+          min_gpa_required: min_gpa_required ? parseFloat(min_gpa_required) : null,
+          sat_score_required,
+          act_score_required,
+          ielts_score_required,
+          toefl_score_required,
+          gre_score_required,
+          gmat_score_required,
+          // Application deadlines
+          application_deadline_fall,
+          application_deadline_spring,
+          application_deadline_summer,
+          // Financial information
+          tuition_fee_graduate: tuition_fee_graduate ? parseInt(tuition_fee_graduate) : null,
+          scholarship_available: scholarship_available || false,
+          financial_aid_available: financial_aid_available || false,
+          // Additional admission requirements
+          application_requirements: application_requirements || [],
+          admission_essay_required: admission_essay_required || false,
+          letters_of_recommendation_required: letters_of_recommendation_required ? parseInt(letters_of_recommendation_required) : 0,
+          interview_required: interview_required || false,
+          work_experience_required: work_experience_required || false,
+          portfolio_required: portfolio_required || false,
           status: 'active',
           featured: false,
           verified: false,
@@ -325,7 +371,30 @@ const updateUniversity = async (req, res) => {
       keywords,
       region,
       ranking_type,
-      ranking_year
+      ranking_year,
+      // New admission requirements fields
+      min_gpa_required,
+      sat_score_required,
+      act_score_required,
+      ielts_score_required,
+      toefl_score_required,
+      gre_score_required,
+      gmat_score_required,
+      // Application deadlines
+      application_deadline_fall,
+      application_deadline_spring,
+      application_deadline_summer,
+      // Financial information
+      tuition_fee_graduate,
+      scholarship_available,
+      financial_aid_available,
+      // Additional admission requirements
+      application_requirements,
+      admission_essay_required,
+      letters_of_recommendation_required,
+      interview_required,
+      work_experience_required,
+      portfolio_required
     } = req.body;
 
     // First check if the university exists
@@ -380,6 +449,29 @@ const updateUniversity = async (req, res) => {
         region,
         ranking_type,
         ranking_year: ranking_year ? parseInt(ranking_year) : null,
+        // New admission requirements fields
+        min_gpa_required: min_gpa_required ? parseFloat(min_gpa_required) : null,
+        sat_score_required,
+        act_score_required,
+        ielts_score_required,
+        toefl_score_required,
+        gre_score_required,
+        gmat_score_required,
+        // Application deadlines
+        application_deadline_fall,
+        application_deadline_spring,
+        application_deadline_summer,
+        // Financial information
+        tuition_fee_graduate: tuition_fee_graduate ? parseInt(tuition_fee_graduate) : null,
+        scholarship_available: scholarship_available || false,
+        financial_aid_available: financial_aid_available || false,
+        // Additional admission requirements
+        application_requirements: application_requirements || [],
+        admission_essay_required: admission_essay_required || false,
+        letters_of_recommendation_required: letters_of_recommendation_required ? parseInt(letters_of_recommendation_required) : 0,
+        interview_required: interview_required || false,
+        work_experience_required: work_experience_required || false,
+        portfolio_required: portfolio_required || false,
         updated_at: new Date()
       })
       .eq('id', id)
