@@ -553,13 +553,17 @@ const enrollInCourse = async (req, res) => {
     // Check if already enrolled
     const { data: existingEnrollment } = await supabase
       .from('course_enrollments')
-      .select('id')
+      .select('*')
       .eq('user_id', userId)
       .eq('course_id', courseId)
       .single();
     
     if (existingEnrollment) {
-      return res.status(400).json({ error: 'User already enrolled in this course' });
+      return res.status(200).json({ 
+        success: true,
+        message: 'User already enrolled in this course',
+        data: { enrollment: existingEnrollment, alreadyEnrolled: true }
+      });
     }
     
     // Get course details for total lectures
@@ -592,7 +596,7 @@ const enrollInCourse = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Successfully enrolled in course',
-      data: { enrollment }
+      data: { enrollment, alreadyEnrolled: false }
     });
   } catch (error) {
     console.error('Enroll course error:', error);

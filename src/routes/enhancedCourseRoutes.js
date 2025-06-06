@@ -55,6 +55,9 @@ router.get('/course-categories', getCourseCategories);
 // Get course reviews
 router.get('/courses/:courseId/reviews', getCourseReviews);
 
+// Get course sections for enrolled users (public access for enrolled users)
+router.get('/courses/:courseId/sections', getCourseSections);
+
 // =============================================
 // ADMIN ROUTES (Admin authentication required)
 // =============================================
@@ -67,8 +70,7 @@ router.delete('/courses/:id', checkAdminByUid, deleteCourse);
 // Course statistics (admin dashboard)
 router.get('/admin/course-statistics', checkAdminByUid, getCourseStatistics);
 
-// Section management
-router.get('/courses/:courseId/sections', checkAdminByUid, getCourseSections);
+// Section management (admin only for create/update/delete)
 router.post('/courses/:courseId/sections', checkAdminByUid, createCourseSection);
 router.put('/sections/:sectionId', checkAdminByUid, updateCourseSection);
 router.delete('/sections/:sectionId', checkAdminByUid, deleteCourseSection);
