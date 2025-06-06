@@ -7,7 +7,7 @@ const getBlogs = async (req, res) => {
     const { page = 1, limit = 10, category, tag, search } = req.query;
     const offset = (page - 1) * limit;
     
-    let query = supabase
+    let query = supabaseAdmin
       .from('blogs')
       .select('*, author:profiles(name, avatar_url)', { count: 'exact' });
       
@@ -57,7 +57,7 @@ const getBlogById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { data: blog, error } = await supabase
+    const { data: blog, error } = await supabaseAdmin
       .from('blogs')
       .select('*, author:profiles(name, avatar_url)')
       .eq('id', id)
@@ -141,7 +141,7 @@ const updateBlog = async (req, res) => {
     } = req.body;
     
     // First check if the blog exists
-    const { data: existingBlog, error: fetchError } = await supabase
+    const { data: existingBlog, error: fetchError } = await supabaseAdmin
       .from('blogs')
       .select('author_id')
       .eq('id', id)
@@ -189,7 +189,7 @@ const deleteBlog = async (req, res) => {
     const { uid } = req.body;
     
     // First check if the blog exists
-    const { data: existingBlog, error: fetchError } = await supabase
+    const { data: existingBlog, error: fetchError } = await supabaseAdmin
       .from('blogs')
       .select('author_id')
       .eq('id', id)
@@ -222,7 +222,7 @@ const deleteBlog = async (req, res) => {
 // Get blog categories
 const getBlogCategories = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('blogs')
       .select('category')
       .order('category');
@@ -245,7 +245,7 @@ const getBlogCategories = async (req, res) => {
 // Get blog tags
 const getBlogTags = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('blogs')
       .select('tags');
       
