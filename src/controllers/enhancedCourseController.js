@@ -310,10 +310,14 @@ const getCourseSections = async (req, res) => {
     const { courseId } = req.params;
     const { uid } = req.query;
     
-    console.log('getCourseSections called with:', { courseId, uid });
+    console.log('=== getCourseSections DEBUG ===');
+    console.log('Request params:', { courseId, uid });
+    console.log('Request query:', req.query);
     
     // If UID is provided, check if user is enrolled or is admin
     if (uid) {
+      console.log('UID provided, checking access...');
+      
       // Check if user is admin
       const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
@@ -321,42 +325,69 @@ const getCourseSections = async (req, res) => {
         .eq('id', uid)
         .single();
       
-      console.log('Profile check result:', { profile, profileError });
+      console.log('Profile query result:', { 
+        profile, 
+        profileError: profileError?.message || profileError,
+        hasProfile: !!profile,
+        role: profile?.role 
+      });
       
       const isAdmin = profile?.role === 'admin';
-      console.log('Is admin:', isAdmin);
+      console.log('Admin check:', { isAdmin, role: profile?.role });
       
       // If not admin, check if user is enrolled
       if (!isAdmin) {
+        console.log('User is not admin, checking enrollment...');
+        
         const { data: enrollment, error: enrollmentError } = await supabaseAdmin
           .from('course_enrollments')
-          .select('id, status')
+          .select('id, status, user_id, course_id')
           .eq('user_id', uid)
           .eq('course_id', courseId)
           .eq('status', 'active')
           .single();
         
-        console.log('Enrollment check result:', { enrollment, enrollmentError });
+        console.log('Enrollment query result:', { 
+          enrollment, 
+          enrollmentError: enrollmentError?.message || enrollmentError,
+          hasEnrollment: !!enrollment,
+          enrollmentStatus: enrollment?.status,
+          queryParams: { user_id: uid, course_id: courseId, status: 'active' }
+        });
         
         if (!enrollment) {
-          console.log('Access denied: User not enrolled and not admin');
+          console.log('❌ ACCESS DENIED: User not enrolled and not admin');
+          console.log('Debug info:', {
+            uid,
+            courseId,
+            isAdmin,
+            enrollmentFound: false,
+            profileRole: profile?.role,
+            enrollmentError: enrollmentError?.message
+          });
+          
           return res.status(403).json({ 
             error: 'Must be enrolled to access course content',
             debug: {
               uid,
               courseId,
               isAdmin,
-              enrollmentFound: false
+              enrollmentFound: false,
+              profileRole: profile?.role,
+              enrollmentError: enrollmentError?.message
             }
           });
         }
         
-        console.log('Access granted: User is enrolled');
+        console.log('✅ ACCESS GRANTED: User is enrolled');
       } else {
-        console.log('Access granted: User is admin');
+        console.log('✅ ACCESS GRANTED: User is admin');
       }
+    } else {
+      console.log('No UID provided, allowing public access');
     }
     
+    console.log('Fetching course sections...');
     const { data: sections, error } = await supabaseAdmin
       .from('course_sections')
       .select(`
@@ -376,18 +407,19 @@ const getCourseSections = async (req, res) => {
       .order('section_order');
       
     if (error) {
-      console.error('Error fetching sections:', error);
+      console.error('❌ Error fetching sections:', error);
       return res.status(500).json({ error: 'Failed to fetch sections' });
     }
     
-    console.log('Sections fetched successfully:', sections?.length || 0);
+    console.log('✅ Sections fetched successfully:', sections?.length || 0);
+    console.log('=== END DEBUG ===');
     
     res.status(200).json({
       success: true,
       data: { sections }
     });
   } catch (error) {
-    console.error('Get sections error:', error);
+    console.error('❌ Get sections error:', error);
     res.status(500).json({ error: 'Server error fetching sections' });
   }
 };
