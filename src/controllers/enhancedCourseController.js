@@ -328,7 +328,7 @@ const getCourseSections = async (req, res) => {
       
       // If not admin, check if user is enrolled
       if (!isAdmin) {
-        const { data: enrollment, error: enrollmentError } = await supabase
+        const { data: enrollment, error: enrollmentError } = await supabaseAdmin
           .from('course_enrollments')
           .select('id, status')
           .eq('user_id', uid)
