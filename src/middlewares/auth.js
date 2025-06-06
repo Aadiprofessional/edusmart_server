@@ -102,7 +102,8 @@ const isAdmin = (req, res, next) => {
 // NEW: Check if provided UID has admin role (no authentication required)
 const checkAdminByUid = async (req, res, next) => {
   try {
-    const { uid } = req.body;
+    // Get UID from body (for POST/PUT) or query (for GET)
+    const uid = req.body.uid || req.query.uid;
     
     if (!uid) {
       return res.status(400).json({ error: 'UID is required' });

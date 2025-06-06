@@ -8,6 +8,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const courseRoutes = require('./routes/courseRoutes');
+const enhancedCourseRoutes = require('./routes/enhancedCourseRoutes');
 const caseStudyRoutes = require('./routes/caseStudyRoutes');
 const responseRoutes = require('./routes/responseRoutes');
 const scholarshipRoutes = require('./routes/scholarshipRoutes');
@@ -64,6 +65,7 @@ app.options('*', cors(corsOptions));
 app.use('/api/auth', authRoutes);
 app.use('/api', blogRoutes);
 app.use('/api', courseRoutes);
+app.use('/api/v2', enhancedCourseRoutes);
 app.use('/api/case-studies', caseStudyRoutes);
 app.use('/api', responseRoutes);
 app.use('/api', scholarshipRoutes);
@@ -76,12 +78,13 @@ app.use('/api/uploads', uploadRoutes);
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to EduSmart API',
-    version: '1.0.1',
+    version: '2.0.0',
     status: 'online',
     endpoints: {
       auth: '/api/auth',
       blogs: '/api/blogs',
       courses: '/api/courses',
+      enhancedCourses: '/api/v2/courses',
       caseStudies: '/api/case-studies',
       responses: '/api/responses',
       scholarships: '/api/scholarships',
