@@ -2,7 +2,7 @@ const { supabase } = require('./src/utils/supabase');
 
 // Test credentials
 const testEmail = 'matrixai.global@gmail.com';
-const testPassword = 'SecurePassword123!';
+const testPassword = '12345678';
 
 async function testCurrentStatus() {
   console.log('🔍 Testing Current API Status');
