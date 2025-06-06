@@ -9,7 +9,7 @@ const getBlogs = async (req, res) => {
     
     let query = supabaseAdmin
       .from('blogs')
-      .select('*, author:profiles(name, avatar_url)', { count: 'exact' });
+      .select('*', { count: 'exact' });
       
     // Apply filters if provided
     if (category) {
@@ -33,12 +33,33 @@ const getBlogs = async (req, res) => {
       console.error('Error fetching blogs:', error);
       return res.status(500).json({ error: 'Failed to fetch blogs' });
     }
+
+    // Get author information separately
+    let blogsWithAuthors = blogs;
+    if (blogs && blogs.length > 0) {
+      const authorIds = [...new Set(blogs.map(blog => blog.author_id).filter(Boolean))];
+      
+      if (authorIds.length > 0) {
+        const { data: authors, error: authorsError } = await supabaseAdmin
+          .from('profiles')
+          .select('id, name, avatar_url')
+          .in('id', authorIds);
+        
+        if (!authorsError && authors) {
+          // Combine blogs with author information
+          blogsWithAuthors = blogs.map(blog => ({
+            ...blog,
+            author: authors.find(author => author.id === blog.author_id) || null
+          }));
+        }
+      }
+    }
     
     // Calculate total pages
     const totalPages = Math.ceil(count / limit);
     
     res.status(200).json({
-      blogs,
+      blogs: blogsWithAuthors,
       pagination: {
         totalItems: count,
         totalPages,
@@ -59,7 +80,7 @@ const getBlogById = async (req, res) => {
     
     const { data: blog, error } = await supabaseAdmin
       .from('blogs')
-      .select('*, author:profiles(name, avatar_url)')
+      .select('*')
       .eq('id', id)
       .single();
       
@@ -67,8 +88,25 @@ const getBlogById = async (req, res) => {
       console.error('Error fetching blog:', error);
       return res.status(404).json({ error: 'Blog not found' });
     }
+
+    // Get author information separately
+    let blogWithAuthor = blog;
+    if (blog && blog.author_id) {
+      const { data: author, error: authorError } = await supabaseAdmin
+        .from('profiles')
+        .select('id, name, avatar_url')
+        .eq('id', blog.author_id)
+        .single();
+      
+      if (!authorError && author) {
+        blogWithAuthor = {
+          ...blog,
+          author
+        };
+      }
+    }
     
-    res.status(200).json({ blog });
+    res.status(200).json({ blog: blogWithAuthor });
   } catch (error) {
     console.error('Get blog error:', error);
     res.status(500).json({ error: 'Server error fetching blog' });
