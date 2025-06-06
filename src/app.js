@@ -111,6 +111,59 @@ app.get('/debug/env', (req, res) => {
   });
 });
 
+// Debug endpoint to test Supabase connection
+app.get('/debug/supabase', async (req, res) => {
+  try {
+    const { supabase, supabaseAdmin } = require('./utils/supabase');
+    
+    // Test basic connection
+    const { data: testData, error: testError } = await supabaseAdmin
+      .from('profiles')
+      .select('count')
+      .limit(1);
+    
+    res.json({
+      supabase_initialized: !!supabase,
+      supabase_admin_initialized: !!supabaseAdmin,
+      connection_test: testError ? 'FAILED' : 'SUCCESS',
+      error: testError ? testError.message : null,
+      data_count: testData ? testData.length : 0
+    });
+  } catch (error) {
+    res.json({
+      error: 'Failed to test Supabase connection',
+      message: error.message
+    });
+  }
+});
+
+// Debug endpoint to test token validation
+app.post('/debug/token', async (req, res) => {
+  try {
+    const { supabase } = require('./utils/supabase');
+    const { token } = req.body;
+    
+    if (!token) {
+      return res.json({ error: 'No token provided' });
+    }
+    
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    res.json({
+      token_valid: !error,
+      user_found: !!user,
+      error: error ? error.message : null,
+      user_id: user ? user.id : null,
+      user_email: user ? user.email : null
+    });
+  } catch (error) {
+    res.json({
+      error: 'Failed to validate token',
+      message: error.message
+    });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
