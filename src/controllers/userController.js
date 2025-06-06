@@ -134,7 +134,7 @@ const getUserStats = async (req, res) => {
     const { count: adminUsers, error: adminError } = await supabase
       .from('profiles')
       .select('*', { count: 'exact', head: true })
-      .eq('is_admin', true);
+      .eq('role', 'admin');
 
     if (adminError) throw adminError;
 
