@@ -10,10 +10,7 @@ const getAllUsers = async (req, res) => {
   try {
     const { data: profiles, error } = await supabase
       .from('profiles')
-      .select(`
-        *,
-        applications:applications(count)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -39,10 +36,7 @@ const getUserById = async (req, res) => {
 
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select(`
-        *,
-        applications:applications(*)
-      `)
+      .select('*')
       .eq('id', id)
       .single();
 
@@ -104,12 +98,6 @@ const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Delete user's applications first
-    await supabase
-      .from('applications')
-      .delete()
-      .eq('user_id', id);
-
     // Delete user profile
     const { error } = await supabase
       .from('profiles')
@@ -127,33 +115,6 @@ const deleteUser = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to delete user',
-      error: error.message
-    });
-  }
-};
-
-// Get user applications
-const getUserApplications = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const { data: applications, error } = await supabase
-      .from('applications')
-      .select('*')
-      .eq('user_id', id)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    res.json({
-      success: true,
-      data: applications
-    });
-  } catch (error) {
-    console.error('Error fetching user applications:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch user applications',
       error: error.message
     });
   }
@@ -189,13 +150,8 @@ const getUserStats = async (req, res) => {
 
     if (newUsersError) throw newUsersError;
 
-    // Get active users (users with applications)
-    const { count: activeUsers, error: activeError } = await supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true })
-      .not('applications', 'is', null);
-
-    if (activeError) throw activeError;
+    // For active users, just use total users since we don't have applications table
+    const activeUsers = totalUsers;
 
     res.json({
       success: true,
@@ -221,6 +177,5 @@ module.exports = {
   getUserById,
   updateUser,
   deleteUser,
-  getUserApplications,
   getUserStats
 }; 
