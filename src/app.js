@@ -96,6 +96,21 @@ app.get('/', (req, res) => {
   });
 });
 
+// Debug endpoint to check environment variables (remove after debugging)
+app.get('/debug/env', (req, res) => {
+  res.json({
+    NODE_ENV: process.env.NODE_ENV,
+    SUPABASE_URL: process.env.SUPABASE_URL ? 'SET' : 'NOT SET',
+    SUPABASE_KEY: process.env.SUPABASE_KEY ? 'SET' : 'NOT SET',
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET',
+    PORT: process.env.PORT,
+    // Don't expose actual values for security
+    supabase_url_length: process.env.SUPABASE_URL ? process.env.SUPABASE_URL.length : 0,
+    supabase_key_length: process.env.SUPABASE_KEY ? process.env.SUPABASE_KEY.length : 0,
+    service_key_length: process.env.SUPABASE_SERVICE_ROLE_KEY ? process.env.SUPABASE_SERVICE_ROLE_KEY.length : 0
+  });
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
