@@ -20,6 +20,42 @@ const authenticateUser = async (req, res, next) => {
         return res.status(401).json({ error: 'Unauthorized - Invalid token' });
       }
 
+      // Attach user info to request (no need to check profiles table for user_profiles routes)
+      req.user = user;
+      req.userId = user.id;
+      req.userEmail = user.email;
+      req.userRole = 'user'; // Default role for regular users
+      
+      next();
+    } catch (error) {
+      return res.status(401).json({ error: 'Unauthorized - Invalid token' });
+    }
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return res.status(500).json({ error: 'Server error during authentication' });
+  }
+};
+
+// Middleware to validate user authentication and check profiles table (for admin routes)
+const authenticateUserWithProfile = async (req, res, next) => {
+  try {
+    // Get token from header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized - No token provided' });
+    }
+
+    // Extract token
+    const token = authHeader.split(' ')[1];
+
+    try {
+      // Verify token with Supabase Auth
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+
+      if (error || !user) {
+        return res.status(401).json({ error: 'Unauthorized - Invalid token' });
+      }
+
       // Get user profile to get role information
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -101,6 +137,7 @@ const checkAdminByUid = async (req, res, next) => {
 
 module.exports = {
   authenticateUser,
+  authenticateUserWithProfile,
   validateUid,
   isAdmin,
   checkAdminByUid

@@ -1,7 +1,8 @@
 const { supabase } = require('../utils/supabase');
 
-// Calculate profile completion percentage
+// Calculate profile completion percentage based on actual database fields
 const calculateProfileCompletion = (profile) => {
+  // Based on your actual user_profiles table schema
   const fields = [
     'full_name', 'email', 'phone', 'date_of_birth', 'nationality',
     'current_location', 'preferred_study_location', 'current_education_level',
@@ -22,30 +23,105 @@ const calculateProfileCompletion = (profile) => {
 // Create or update user profile
 const createOrUpdateProfile = async (req, res) => {
   try {
-    const userId = req.userId;
+    const authUserId = req.userId; // This is from auth.users.id
     const profileData = { ...req.body };
 
-    // Remove user_id from profileData if it exists (we'll set it ourselves)
+    // Remove protected fields
     delete profileData.user_id;
     delete profileData.id;
+    delete profileData.created_at;
 
-    // Check if profile already exists
-    const { data: existingProfile } = await supabase
+    // First, get or create the user's profile record
+    let { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, email, name')
+      .eq('id', authUserId)
+      .single();
+
+    if (profileError || !userProfile) {
+      // Create profile record if it doesn't exist
+      const { data: newProfile, error: createProfileError } = await supabase
+        .from('profiles')
+        .insert([{
+          id: authUserId,
+          email: req.userEmail,
+          name: profileData.full_name || '',
+          role: 'user',
+          created_at: new Date(),
+          updated_at: new Date()
+        }])
+        .select()
+        .single();
+
+      if (createProfileError) {
+        console.error('Profile creation error:', createProfileError);
+        return res.status(400).json({ error: 'Failed to create user profile: ' + createProfileError.message });
+      }
+      userProfile = newProfile;
+    }
+
+    // Sanitize data - handle empty strings and null values
+    const sanitizeData = (data) => {
+      const sanitized = {};
+      for (const [key, value] of Object.entries(data)) {
+        // Handle date fields - convert empty strings to null
+        if (key === 'date_of_birth' && (value === '' || value === null || value === undefined)) {
+          sanitized[key] = null;
+        }
+        // Handle numeric fields - convert empty strings to null
+        else if (['current_gpa', 'sat_score', 'act_score', 'gre_score', 'gmat_score', 'toefl_score', 'ielts_score', 'duolingo_score'].includes(key)) {
+          if (value === '' || value === null || value === undefined || value === 0) {
+            sanitized[key] = null;
+          } else {
+            sanitized[key] = value;
+          }
+        }
+        // Handle boolean fields
+        else if (key === 'financial_aid_needed') {
+          sanitized[key] = Boolean(value);
+        }
+        // Handle JSONB arrays
+        else if (['extracurricular_activities', 'languages'].includes(key)) {
+          if (Array.isArray(value)) {
+            sanitized[key] = value;
+          } else if (typeof value === 'string' && value.trim()) {
+            // Convert comma-separated string to array
+            sanitized[key] = value.split(',').map(item => item.trim()).filter(item => item);
+          } else {
+            sanitized[key] = [];
+          }
+        }
+        // Handle string fields
+        else if (typeof value === 'string' || value === null || value === undefined) {
+          sanitized[key] = value || '';
+        }
+        // Keep other values as is
+        else {
+          sanitized[key] = value;
+        }
+      }
+      return sanitized;
+    };
+
+    const sanitizedData = sanitizeData(profileData);
+
+    // Check if user_profile already exists (using profiles.id as user_id)
+    const { data: existingUserProfile } = await supabase
       .from('user_profiles')
       .select('id')
-      .eq('user_id', userId)
+      .eq('user_id', userProfile.id)
       .single();
 
     let result;
-    if (existingProfile) {
+    if (existingUserProfile) {
       // Update existing profile
       const { data, error } = await supabase
         .from('user_profiles')
         .update({
-          ...profileData,
+          ...sanitizedData,
           updated_at: new Date()
         })
-        .eq('user_id', userId)
+        .eq('user_id', userProfile.id)
         .select()
         .single();
 
@@ -55,12 +131,13 @@ const createOrUpdateProfile = async (req, res) => {
       }
       result = data;
     } else {
-      // Create new profile
+      // Create new profile (user_id references profiles.id)
       const { data, error } = await supabase
         .from('user_profiles')
         .insert([{
-          user_id: userId,
-          ...profileData
+          user_id: userProfile.id,
+          ...sanitizedData,
+          created_at: new Date()
         }])
         .select()
         .single();
@@ -78,7 +155,7 @@ const createOrUpdateProfile = async (req, res) => {
     const { data: updatedProfile, error: updateError } = await supabase
       .from('user_profiles')
       .update({ profile_completion_percentage: completionPercentage })
-      .eq('user_id', userId)
+      .eq('user_id', userProfile.id)
       .select()
       .single();
 
@@ -87,8 +164,8 @@ const createOrUpdateProfile = async (req, res) => {
       // Continue anyway, just log the error
     }
 
-    res.status(existingProfile ? 200 : 201).json({
-      message: existingProfile ? 'Profile updated successfully' : 'Profile created successfully',
+    res.status(existingUserProfile ? 200 : 201).json({
+      message: existingUserProfile ? 'Profile updated successfully' : 'Profile created successfully',
       profile: updatedProfile || result
     });
   } catch (error) {
@@ -100,12 +177,24 @@ const createOrUpdateProfile = async (req, res) => {
 // Get user profile
 const getUserProfile = async (req, res) => {
   try {
-    const userId = req.userId;
+    const authUserId = req.userId; // This is from auth.users.id
 
+    // First get the user's profile record to get the profiles.id
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, email, name')
+      .eq('id', authUserId)
+      .single();
+
+    if (profileError || !userProfile) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+
+    // Now get the detailed user_profile using profiles.id
     const { data: profile, error } = await supabase
       .from('user_profiles')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', userProfile.id)
       .single();
 
     if (error) {
@@ -126,7 +215,7 @@ const getUserProfile = async (req, res) => {
 // Update specific profile fields
 const updateProfileFields = async (req, res) => {
   try {
-    const userId = req.userId;
+    const authUserId = req.userId;
     const updates = { ...req.body };
 
     // Remove protected fields
@@ -137,10 +226,21 @@ const updateProfileFields = async (req, res) => {
     // Add updated timestamp
     updates.updated_at = new Date();
 
+    // Get the user's profile record to get the profiles.id
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', authUserId)
+      .single();
+
+    if (profileError || !userProfile) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+
     const { data: profile, error } = await supabase
       .from('user_profiles')
       .update(updates)
-      .eq('user_id', userId)
+      .eq('user_id', userProfile.id)
       .select()
       .single();
 
@@ -155,7 +255,7 @@ const updateProfileFields = async (req, res) => {
     const { data: updatedProfile } = await supabase
       .from('user_profiles')
       .update({ profile_completion_percentage: completionPercentage })
-      .eq('user_id', userId)
+      .eq('user_id', userProfile.id)
       .select()
       .single();
 
@@ -172,12 +272,23 @@ const updateProfileFields = async (req, res) => {
 // Delete user profile
 const deleteUserProfile = async (req, res) => {
   try {
-    const userId = req.userId;
+    const authUserId = req.userId;
+
+    // Get the user's profile record to get the profiles.id
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', authUserId)
+      .single();
+
+    if (profileError || !userProfile) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
 
     const { error } = await supabase
       .from('user_profiles')
       .delete()
-      .eq('user_id', userId);
+      .eq('user_id', userProfile.id);
 
     if (error) {
       console.error('Delete profile error:', error);
@@ -194,12 +305,23 @@ const deleteUserProfile = async (req, res) => {
 // Get profile completion status
 const getProfileCompletion = async (req, res) => {
   try {
-    const userId = req.userId;
+    const authUserId = req.userId;
+
+    // Get the user's profile record to get the profiles.id
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', authUserId)
+      .single();
+
+    if (profileError || !userProfile) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
 
     const { data: profile, error } = await supabase
       .from('user_profiles')
       .select('profile_completion_percentage, updated_at')
-      .eq('user_id', userId)
+      .eq('user_id', userProfile.id)
       .single();
 
     if (error) {
