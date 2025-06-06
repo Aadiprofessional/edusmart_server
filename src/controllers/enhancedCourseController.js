@@ -308,6 +308,34 @@ const deleteCourse = async (req, res) => {
 const getCourseSections = async (req, res) => {
   try {
     const { courseId } = req.params;
+    const { uid } = req.query;
+    
+    // If UID is provided, check if user is enrolled or is admin
+    if (uid) {
+      // Check if user is admin
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', uid)
+        .single();
+      
+      const isAdmin = profile?.role === 'admin';
+      
+      // If not admin, check if user is enrolled
+      if (!isAdmin) {
+        const { data: enrollment } = await supabase
+          .from('course_enrollments')
+          .select('id')
+          .eq('user_id', uid)
+          .eq('course_id', courseId)
+          .eq('status', 'active')
+          .single();
+        
+        if (!enrollment) {
+          return res.status(403).json({ error: 'Must be enrolled to access course content' });
+        }
+      }
+    }
     
     const { data: sections, error } = await supabaseAdmin
       .from('course_sections')
