@@ -88,9 +88,34 @@ router.delete('/lectures/:lectureId', checkAdminByUid, deleteCourseLecture);
 router.post('/courses/:courseId/enroll', enrollInCourse);
 router.get('/users/:userId/enrollments', getUserEnrollments);
 
+// Check enrollment status (for debugging)
+router.get('/courses/:courseId/enrollment/:userId', async (req, res) => {
+  try {
+    const { courseId, userId } = req.params;
+    
+    const { data: enrollment, error } = await require('../utils/supabase').supabaseAdmin
+      .from('course_enrollments')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('course_id', courseId)
+      .single();
+    
+    res.json({
+      success: true,
+      data: {
+        enrolled: !!enrollment,
+        enrollment: enrollment || null,
+        error: error?.message || null
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error checking enrollment' });
+  }
+});
+
 // Progress tracking
-router.put('/lectures/:lectureId/progress', updateLectureProgress);
-router.get('/courses/:courseId/users/:userId/progress', getCourseProgress);
+router.post('/courses/:courseId/progress', updateLectureProgress);
+router.get('/courses/:courseId/progress/:userId', getCourseProgress);
 
 // Course reviews
 router.post('/courses/:courseId/reviews', createCourseReview);

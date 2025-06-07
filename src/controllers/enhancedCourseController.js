@@ -341,7 +341,7 @@ const getCourseSections = async (req, res) => {
         
         const { data: enrollment, error: enrollmentError } = await supabaseAdmin
           .from('course_enrollments')
-          .select('id, status, user_id, course_id')
+          .select('id, status, user_id, course_id, enrolled_at')
           .eq('user_id', uid)
           .eq('course_id', courseId)
           .eq('status', 'active')
@@ -357,14 +357,15 @@ const getCourseSections = async (req, res) => {
         
         if (!enrollment) {
           console.log('❌ ACCESS DENIED: User not enrolled and not admin');
-          console.log('Debug info:', {
-            uid,
-            courseId,
-            isAdmin,
-            enrollmentFound: false,
-            profileRole: profile?.role,
-            enrollmentError: enrollmentError?.message
-          });
+          
+          // Check if there's any enrollment record (regardless of status)
+          const { data: anyEnrollment } = await supabaseAdmin
+            .from('course_enrollments')
+            .select('id, status, user_id, course_id, enrolled_at')
+            .eq('user_id', uid)
+            .eq('course_id', courseId);
+          
+          console.log('Any enrollment check:', anyEnrollment);
           
           return res.status(403).json({ 
             error: 'Must be enrolled to access course content',
@@ -374,7 +375,9 @@ const getCourseSections = async (req, res) => {
               isAdmin,
               enrollmentFound: false,
               profileRole: profile?.role,
-              enrollmentError: enrollmentError?.message
+              enrollmentError: enrollmentError?.message,
+              anyEnrollmentFound: !!anyEnrollment?.length,
+              anyEnrollments: anyEnrollment
             }
           });
         }
@@ -384,10 +387,24 @@ const getCourseSections = async (req, res) => {
         console.log('✅ ACCESS GRANTED: User is admin');
       }
     } else {
-      console.log('No UID provided, allowing public access');
+      console.log('No UID provided, allowing public access to preview content only');
     }
     
     console.log('Fetching course sections...');
+    
+    // Get course details first
+    const { data: course, error: courseError } = await supabaseAdmin
+      .from('courses')
+      .select('id, title, instructor_name, total_sections, total_lectures')
+      .eq('id', courseId)
+      .single();
+      
+    if (courseError || !course) {
+      console.error('❌ Course not found:', courseError);
+      return res.status(404).json({ error: 'Course not found' });
+    }
+    
+    // Get sections with lectures
     const { data: sections, error } = await supabaseAdmin
       .from('course_sections')
       .select(`
@@ -397,7 +414,10 @@ const getCourseSections = async (req, res) => {
           title,
           description,
           lecture_type,
+          video_url,
           video_duration_seconds,
+          article_content,
+          resource_url,
           lecture_order,
           is_preview,
           is_free
@@ -411,12 +431,29 @@ const getCourseSections = async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch sections' });
     }
     
+    // Get user progress if UID is provided
+    let progress = [];
+    if (uid) {
+      const { data: progressData } = await supabaseAdmin
+        .from('lecture_progress')
+        .select('lecture_id, progress_percentage, completed, last_watched_position')
+        .eq('user_id', uid)
+        .eq('course_id', courseId);
+      
+      progress = progressData || [];
+    }
+    
     console.log('✅ Sections fetched successfully:', sections?.length || 0);
+    console.log('✅ Progress data fetched:', progress?.length || 0);
     console.log('=== END DEBUG ===');
     
     res.status(200).json({
       success: true,
-      data: { sections }
+      data: { 
+        course,
+        sections: sections || [],
+        progress: progress || []
+      }
     });
   } catch (error) {
     console.error('❌ Get sections error:', error);
@@ -632,15 +669,46 @@ const enrollInCourse = async (req, res) => {
     const { courseId } = req.params;
     const { userId, pricePaid, paymentMethod, transactionId } = req.body;
     
+    console.log('=== enrollInCourse DEBUG ===');
+    console.log('Request params:', { courseId, userId, pricePaid, paymentMethod });
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    if (!courseId) {
+      return res.status(400).json({ error: 'Course ID is required' });
+    }
+    
+    // Check if course exists
+    const { data: course, error: courseError } = await supabaseAdmin
+      .from('courses')
+      .select('id, title, price, total_lectures')
+      .eq('id', courseId)
+      .single();
+    
+    if (courseError || !course) {
+      console.error('❌ Course not found:', courseError);
+      return res.status(404).json({ error: 'Course not found' });
+    }
+    
+    console.log('✅ Course found:', course.title);
+    
     // Check if already enrolled
-    const { data: existingEnrollment } = await supabase
+    const { data: existingEnrollment, error: checkError } = await supabaseAdmin
       .from('course_enrollments')
       .select('*')
       .eq('user_id', userId)
       .eq('course_id', courseId)
       .single();
     
+    console.log('Existing enrollment check:', { 
+      existingEnrollment, 
+      checkError: checkError?.message 
+    });
+    
     if (existingEnrollment) {
+      console.log('✅ User already enrolled');
       return res.status(200).json({ 
         success: true,
         message: 'User already enrolled in this course',
@@ -648,21 +716,19 @@ const enrollInCourse = async (req, res) => {
       });
     }
     
-    // Get course details for total lectures
-    const { data: course } = await supabase
-      .from('courses')
-      .select('total_lectures')
-      .eq('id', courseId)
-      .single();
-    
+    // Create new enrollment
     const enrollmentData = {
       user_id: userId,
       course_id: courseId,
       price_paid: pricePaid || 0,
-      payment_method: paymentMethod,
-      transaction_id: transactionId,
-      total_lectures: course?.total_lectures || 0
+      currency: 'USD',
+      payment_method: paymentMethod || 'free',
+      transaction_id: transactionId || `free_${Date.now()}`,
+      total_lectures: course.total_lectures || 0,
+      status: 'active'
     };
+    
+    console.log('Creating enrollment with data:', enrollmentData);
     
     const { data: enrollment, error } = await supabaseAdmin
       .from('course_enrollments')
@@ -671,9 +737,15 @@ const enrollInCourse = async (req, res) => {
       .single();
       
     if (error) {
-      console.error('Error creating enrollment:', error);
-      return res.status(500).json({ error: 'Failed to enroll in course' });
+      console.error('❌ Error creating enrollment:', error);
+      return res.status(500).json({ 
+        error: 'Failed to enroll in course',
+        details: error.message 
+      });
     }
+    
+    console.log('✅ Enrollment created successfully:', enrollment.id);
+    console.log('=== END enrollInCourse DEBUG ===');
     
     res.status(201).json({
       success: true,
@@ -681,7 +753,7 @@ const enrollInCourse = async (req, res) => {
       data: { enrollment, alreadyEnrolled: false }
     });
   } catch (error) {
-    console.error('Enroll course error:', error);
+    console.error('❌ Enroll course error:', error);
     res.status(500).json({ error: 'Server error enrolling in course' });
   }
 };
