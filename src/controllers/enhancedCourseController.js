@@ -125,7 +125,8 @@ const getCourseById = async (req, res) => {
             video_duration_seconds,
             lecture_order,
             is_preview,
-            is_free
+            is_free,
+            summary
           )
         )
       `)
@@ -420,7 +421,8 @@ const getCourseSections = async (req, res) => {
           resource_url,
           lecture_order,
           is_preview,
-          is_free
+          is_free,
+          summary
         )
       `)
       .eq('course_id', courseId)
@@ -498,7 +500,8 @@ const createCourseSection = async (req, res) => {
 const updateCourseSection = async (req, res) => {
   try {
     const { sectionId } = req.params;
-    const updateData = { ...req.body, updated_at: new Date() };
+    const { uid, ...updateData } = req.body; // Extract uid and exclude it from update data
+    updateData.updated_at = new Date();
     
     const { data: section, error } = await supabaseAdmin
       .from('course_sections')
@@ -580,7 +583,8 @@ const createCourseLecture = async (req, res) => {
       resource_url: req.body.resource_url,
       lecture_order: req.body.lecture_order,
       is_preview: req.body.is_preview || false,
-      is_free: req.body.is_free || false
+      is_free: req.body.is_free || false,
+      summary: req.body.summary || null
     };
     
     const { data: lecture, error } = await supabaseAdmin
@@ -609,7 +613,8 @@ const createCourseLecture = async (req, res) => {
 const updateCourseLecture = async (req, res) => {
   try {
     const { lectureId } = req.params;
-    const updateData = { ...req.body, updated_at: new Date() };
+    const { uid, ...updateData } = req.body; // Extract uid and exclude it from update data
+    updateData.updated_at = new Date();
     
     const { data: lecture, error } = await supabaseAdmin
       .from('course_lectures')
@@ -1023,6 +1028,88 @@ const getCourseReviews = async (req, res) => {
 };
 
 // =============================================
+// AI VIDEO SUMMARY GENERATION
+// =============================================
+
+// Generate AI video summary
+const generateVideoSummary = async (req, res) => {
+  try {
+    const { videoUrl } = req.body;
+    
+    if (!videoUrl) {
+      return res.status(400).json({ error: 'Video URL is required' });
+    }
+    
+    console.log('Generating AI summary for video:', videoUrl);
+    
+    // Make request to Qwen API
+    const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer sk-0d874843ff2542c38940adcbeb2b2cc4',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "qwen-vl-max",
+        input: {
+          messages: [
+            {
+              role: "system",
+              content: [{ 
+                text: "You are an educational content analyzer. Analyze the video and provide a comprehensive, well-structured summary suitable for educational purposes. Include key topics, main concepts, and learning objectives covered in the video." 
+              }]
+            },
+            {
+              role: "user",
+              content: [
+                { video: videoUrl, fps: 2 },
+                { 
+                  text: "Please provide a detailed educational summary of this video content. Structure it with clear sections covering: 1) Main Topic/Subject, 2) Key Concepts Covered, 3) Learning Objectives, 4) Important Details/Examples, and 5) Summary/Conclusion. Make it comprehensive and suitable for students." 
+                }
+              ]
+            }
+          ]
+        }
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('Qwen API error:', data);
+      return res.status(response.status).json({ 
+        error: 'Failed to generate summary',
+        details: data.message || 'Unknown error from AI service'
+      });
+    }
+    
+    if (data.output && data.output.choices && data.output.choices[0]) {
+      const summary = data.output.choices[0].message.content[0].text;
+      
+      res.status(200).json({
+        success: true,
+        data: { 
+          summary,
+          usage: data.usage || null
+        }
+      });
+    } else {
+      console.error('Unexpected API response format:', data);
+      return res.status(500).json({ 
+        error: 'Invalid response format from AI service',
+        details: 'The AI service returned an unexpected response format'
+      });
+    }
+  } catch (error) {
+    console.error('Generate video summary error:', error);
+    res.status(500).json({ 
+      error: 'Server error generating video summary',
+      details: error.message 
+    });
+  }
+};
+
+// =============================================
 // UTILITY FUNCTIONS
 // =============================================
 
@@ -1117,5 +1204,8 @@ module.exports = {
   
   // Utilities
   getCourseCategories,
-  getCourseStatistics
+  getCourseStatistics,
+  
+  // AI Video Summary Generation
+  generateVideoSummary
 }; 

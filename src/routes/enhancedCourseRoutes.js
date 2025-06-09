@@ -33,7 +33,10 @@ const {
   
   // Utilities
   getCourseCategories,
-  getCourseStatistics
+  getCourseStatistics,
+  
+  // AI Video Summary
+  generateVideoSummary
 } = require('../controllers/enhancedCourseController');
 
 const { checkAdminByUid } = require('../middlewares/auth');
@@ -126,5 +129,8 @@ router.post('/courses/:courseId/reviews', createCourseReview);
 
 // Get course sections (for enrolled users or admins)
 router.get('/enrolled/courses/:courseId/sections', getCourseSections);
+
+// AI Video Summary Generation
+router.post('/generate-video-summary', generateVideoSummary);
 
 module.exports = router; 

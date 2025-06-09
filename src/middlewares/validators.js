@@ -99,12 +99,6 @@ const courseValidationRules = [
     .isIn(['beginner', 'intermediate', 'advanced'])
     .withMessage('Level must be one of: beginner, intermediate, advanced'),
   
-  body('duration')
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Duration is required'),
-  
   body('instructor_name')
     .isString()
     .trim()
@@ -112,6 +106,25 @@ const courseValidationRules = [
     .withMessage('Instructor name is required')
     .isLength({ min: 2, max: 100 })
     .withMessage('Instructor name must be between 2 and 100 characters'),
+  
+  // Optional fields that match database schema
+  body('subtitle')
+    .optional()
+    .isString()
+    .isLength({ max: 300 })
+    .withMessage('Subtitle must be at most 300 characters'),
+  
+  body('subcategory')
+    .optional()
+    .isString()
+    .isLength({ max: 50 })
+    .withMessage('Subcategory must be at most 50 characters'),
+  
+  body('language')
+    .optional()
+    .isString()
+    .isLength({ max: 20 })
+    .withMessage('Language must be at most 20 characters'),
   
   body('price')
     .optional()
@@ -123,50 +136,106 @@ const courseValidationRules = [
     .isNumeric()
     .withMessage('Original price must be a number'),
   
-  body('image')
+  body('currency')
+    .optional()
+    .isString()
+    .isLength({ max: 3 })
+    .withMessage('Currency must be at most 3 characters'),
+  
+  body('duration_hours')
+    .optional()
+    .isNumeric()
+    .withMessage('Duration hours must be a number'),
+  
+  body('total_lectures')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Total lectures must be a non-negative integer'),
+  
+  body('total_sections')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Total sections must be a non-negative integer'),
+  
+  body('thumbnail_image')
     .optional()
     .isURL()
-    .withMessage('Image must be a valid URL'),
+    .withMessage('Thumbnail image must be a valid URL'),
+  
+  body('preview_video_url')
+    .optional()
+    .isURL()
+    .withMessage('Preview video URL must be a valid URL'),
+  
+  body('instructor_id')
+    .optional()
+    .isUUID()
+    .withMessage('Instructor ID must be a valid UUID'),
+  
+  body('instructor_bio')
+    .optional()
+    .isString()
+    .withMessage('Instructor bio must be a string'),
   
   body('instructor_image')
     .optional()
     .isURL()
     .withMessage('Instructor image must be a valid URL'),
   
-  body('video_preview_url')
+  body('what_you_will_learn')
     .optional()
-    .isURL()
-    .withMessage('Video preview URL must be a valid URL'),
+    .isArray()
+    .withMessage('What you will learn must be an array'),
   
   body('prerequisites')
     .optional()
     .isArray()
     .withMessage('Prerequisites must be an array'),
   
-  body('learning_outcomes')
+  body('target_audience')
     .optional()
     .isArray()
-    .withMessage('Learning outcomes must be an array'),
+    .withMessage('Target audience must be an array'),
   
-  body('skills_gained')
+  body('course_includes')
     .optional()
     .isArray()
-    .withMessage('Skills gained must be an array'),
+    .withMessage('Course includes must be an array'),
   
   body('tags')
     .optional()
     .isArray()
     .withMessage('Tags must be an array'),
   
-  body('language')
+  body('keywords')
+    .optional()
+    .isArray()
+    .withMessage('Keywords must be an array'),
+  
+  body('meta_description')
     .optional()
     .isString()
-    .withMessage('Language must be a string'),
+    .withMessage('Meta description must be a string'),
   
-  body('certificate')
+  body('status')
+    .optional()
+    .isIn(['draft'])
+    .withMessage('Status must be: draft'),
+  
+  body('featured')
     .optional()
     .isBoolean()
-    .withMessage('Certificate must be a boolean'),
+    .withMessage('Featured must be a boolean'),
+  
+  body('bestseller')
+    .optional()
+    .isBoolean()
+    .withMessage('Bestseller must be a boolean'),
+  
+  body('new_course')
+    .optional()
+    .isBoolean()
+    .withMessage('New course must be a boolean'),
   
   body('rating')
     .optional()
@@ -184,15 +253,15 @@ const courseValidationRules = [
     .isInt({ min: 0 })
     .withMessage('Total students must be a non-negative integer'),
   
-  body('featured')
+  body('certificate_available')
     .optional()
     .isBoolean()
-    .withMessage('Featured must be a boolean'),
+    .withMessage('Certificate available must be a boolean'),
   
-  body('status')
+  body('completion_certificate_template')
     .optional()
-    .isIn(['active', 'inactive', 'draft'])
-    .withMessage('Status must be one of: active, inactive, draft'),
+    .isString()
+    .withMessage('Completion certificate template must be a string'),
   
   validateRequest
 ];
