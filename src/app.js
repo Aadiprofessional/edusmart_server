@@ -22,23 +22,42 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-    'http://127.0.0.1:3002',
-    // Add your production frontend URLs here
-    'https://edusmart-admin.vercel.app',
-    'https://edusmart-frontend.vercel.app',
-    'https://edusmart.vercel.app',
-    'https://edusmart-admin.pages.dev',
-    'https://edusmart-9z4.pages.dev',
-    // Add any other frontend domains you might use
-    /^https:\/\/.*\.vercel\.app$/,
-    /^https:\/\/.*\.pages\.dev$/,
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      'http://127.0.0.1:3002',
+      // Add your production frontend URLs here
+      'https://edusmart-admin.vercel.app',
+      'https://edusmart-frontend.vercel.app',
+      'https://edusmart.vercel.app',
+      'https://edusmart-admin.pages.dev',
+      'https://edusmart-9z4.pages.dev',
+    ];
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    
+    // Check regex patterns for vercel and pages.dev domains
+    const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
+    const pagesPattern = /^https:\/\/.*\.pages\.dev$/;
+    
+    if (vercelPattern.test(origin) || pagesPattern.test(origin)) {
+      return callback(null, true);
+    }
+    
+    // If origin is not allowed, return error
+    const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+    return callback(new Error(msg), false);
+  },
   credentials: true, // Allow cookies and credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: [
