@@ -48,7 +48,7 @@ const corsOptions = {
     ];
     
     // Check if origin is in allowed list
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.includes(origin)) {
       console.log('✅ Origin found in allowed list:', origin);
       return callback(null, true);
     }
@@ -81,9 +81,13 @@ const corsOptions = {
     'Authorization', 
     'X-Requested-With',
     'Accept',
-    'Origin'
+    'Origin',
+    'Cache-Control',
+    'Pragma'
   ],
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
+  optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+  preflightContinue: false // Pass control to next handler
 };
 
 // Middleware
@@ -92,6 +96,50 @@ app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Additional CORS headers middleware for extra safety
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Set CORS headers manually as backup
+  if (origin) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      'http://127.0.0.1:3002',
+      'https://edusmart-admin.vercel.app',
+      'https://edusmart-frontend.vercel.app',
+      'https://edusmart.vercel.app',
+      'https://edusmart-admin.pages.dev',
+      'https://edusmart-9z4.pages.dev',
+    ];
+    
+    const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
+    const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
+    const pagesPattern = /^https:\/\/.*\.pages\.dev$/;
+    
+    if (allowedOrigins.includes(origin) || 
+        localhostPattern.test(origin) || 
+        vercelPattern.test(origin) || 
+        pagesPattern.test(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma');
+    }
+  }
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
+  next();
+});
 
 // Handle preflight requests
 app.options('*', cors(corsOptions));
