@@ -23,8 +23,14 @@ const app = express();
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
+    // Log the origin for debugging
+    console.log('CORS request from origin:', origin);
+    
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('✅ Allowing request with no origin');
+      return callback(null, true);
+    }
     
     const allowedOrigins = [
       'http://localhost:3000',
@@ -43,6 +49,14 @@ const corsOptions = {
     
     // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log('✅ Origin found in allowed list:', origin);
+      return callback(null, true);
+    }
+    
+    // Check for localhost with any port (more flexible for development)
+    const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
+    if (localhostPattern.test(origin)) {
+      console.log('✅ Origin matches localhost pattern:', origin);
       return callback(null, true);
     }
     
@@ -51,10 +65,12 @@ const corsOptions = {
     const pagesPattern = /^https:\/\/.*\.pages\.dev$/;
     
     if (vercelPattern.test(origin) || pagesPattern.test(origin)) {
+      console.log('✅ Origin matches production pattern:', origin);
       return callback(null, true);
     }
     
     // If origin is not allowed, return error
+    console.log('❌ Origin not allowed:', origin);
     const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
     return callback(new Error(msg), false);
   },
