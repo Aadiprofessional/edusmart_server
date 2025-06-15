@@ -54,6 +54,31 @@ import {
 } from '../../src/controllers/userProfileController.js';
 import applicationController from '../../src/controllers/applicationController.js';
 
+// Import auth middleware functions
+import { supabase } from '../../src/utils/supabase.js';
+
+// Authentication helper function
+async function authenticateRequest(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { success: false, error: 'No token provided' };
+  }
+
+  const token = authHeader.split(' ')[1];
+  
+  try {
+    const { data: { user }, error } = await supabase().auth.getUser(token);
+    
+    if (error || !user) {
+      return { success: false, error: 'Invalid token' };
+    }
+    
+    return { success: true, user };
+  } catch (error) {
+    return { success: false, error: 'Token verification failed' };
+  }
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   
@@ -83,6 +108,10 @@ export async function onRequest(context) {
       headers: Object.fromEntries(request.headers),
       body: null,
       params: {},
+      user: null,
+      userId: null,
+      userEmail: null,
+      userRole: null,
       get: function(header) {
         return this.headers[header.toLowerCase()];
       }
@@ -143,6 +172,37 @@ export async function onRequest(context) {
         status: 200,
         headers: responseHeaders
       });
+    }
+
+    // Routes that require authentication
+    const protectedRoutes = [
+      '/auth/profile',
+      '/user-profile',
+      '/blogs',
+      '/courses'
+    ];
+
+    const requiresAuth = protectedRoutes.some(route => {
+      if (route === path) return true;
+      if (path.startsWith(route + '/')) return true;
+      return false;
+    }) && !['GET'].includes(method) || path === '/auth/profile';
+
+    // Authenticate if required
+    if (requiresAuth) {
+      const authResult = await authenticateRequest(req);
+      if (!authResult.success) {
+        return new Response(JSON.stringify({ error: authResult.error }), {
+          status: 401,
+          headers: responseHeaders
+        });
+      }
+      
+      // Add user info to request
+      req.user = authResult.user;
+      req.userId = authResult.user.id;
+      req.userEmail = authResult.user.email;
+      req.userRole = 'user'; // Default role
     }
 
     // Route handling
