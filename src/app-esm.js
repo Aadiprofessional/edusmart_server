@@ -199,5 +199,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Server error', message: err.message });
 });
 
+// Start server (only when running directly, not when imported)
+const PORT = process.env.PORT || 8000;
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  app.listen(PORT, () => {
+    console.log(`🚀 EduSmart API Server running on port ${PORT}`);
+    console.log(`📍 Local URL: http://localhost:${PORT}`);
+    console.log(`📚 API Documentation: http://localhost:${PORT}/`);
+  });
+}
+
 // Export the app for use in Cloudflare Pages Functions
 export default app; 

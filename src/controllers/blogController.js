@@ -113,81 +113,61 @@ const getBlogById = async (req, res) => {
   }
 };
 
-// Create a new blog post (Admin only)
+// Create a new blog (Admin only)
 const createBlog = async (req, res) => {
   try {
-    console.log('Request body:', req.body);
-    
     const { 
+      uid,
       title, 
       content, 
       excerpt, 
       category, 
       tags, 
-      image, 
-      status,
-      featured,
-      meta_description,
-      slug
+      image
     } = req.body;
     
-    console.log('Extracted fields:', { title, category, status });
+    // The UID has already been verified by checkAdminByUid middleware
+    const authorId = uid;
     
-    // Use authenticated user ID if available, otherwise use a known admin UUID
-    const authorId = req.userId || 'bca2f806-29c5-4be9-bc2d-a484671546cd';
-    
-    // Generate slug from title if not provided
-    const blogSlug = slug || (title ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '');
-    
-    const insertData = {
+    // Prepare blog data without featured field to avoid schema issues
+    const blogData = {
+      id: uuidv4(),
       title,
       content,
-      excerpt: excerpt || content?.substring(0, 200) || '',
-      category: category || 'General',
-      tags: tags || [],
-      image: image || null,
+      excerpt,
+      category,
+      tags,
+      image,
       author_id: authorId,
-      status: status || 'published',
-      featured: featured || false,
-      meta_description: meta_description || null,
-      slug: blogSlug,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     
-    console.log('Insert data:', insertData);
-    
     // Use admin client to bypass RLS for admin operations
     const { data: blog, error } = await supabaseAdmin()
       .from('blogs')
-      .insert([insertData])
+      .insert([blogData])
       .select()
       .single();
       
     if (error) {
-      console.error('Supabase error creating blog:', error);
+      console.error('Error creating blog:', error);
       return res.status(500).json({ 
-        error: 'Failed to create blog', 
+        error: 'Failed to create blog',
         details: error.message 
       });
     }
     
-    if (!blog) {
-      return res.status(500).json({ 
-        error: 'Failed to create blog', 
-        details: 'No blog data returned from database'
-      });
-    }
-    
-    console.log('Blog created successfully:', blog);
-    
     res.status(201).json({ 
       message: 'Blog created successfully', 
-      data: blog 
+      blog 
     });
   } catch (error) {
     console.error('Create blog error:', error);
-    res.status(500).json({ error: 'Server error creating blog', details: error.message });
+    res.status(500).json({ 
+      error: 'Server error creating blog',
+      details: error.message 
+    });
   }
 };
 
@@ -216,18 +196,21 @@ const updateBlog = async (req, res) => {
       return res.status(404).json({ error: 'Blog not found' });
     }
     
+    // Prepare update data without featured field
+    const updateData = {
+      title,
+      content,
+      excerpt,
+      category,
+      tags,
+      image,
+      updated_at: new Date().toISOString()
+    };
+    
     // Update the blog using admin client (admin can update any blog)
     const { data: updatedBlog, error } = await supabaseAdmin()
       .from('blogs')
-      .update({
-        title,
-        content,
-        excerpt,
-        category,
-        tags,
-        image,
-        updated_at: new Date()
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

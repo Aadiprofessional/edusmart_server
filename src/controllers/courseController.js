@@ -90,9 +90,9 @@ const createCourse = async (req, res) => {
       title, 
       subtitle,
       description, 
-      category,
+      category, 
       subcategory,
-      level,
+      level, 
       language,
       price,
       original_price,
@@ -100,15 +100,12 @@ const createCourse = async (req, res) => {
       duration_hours,
       total_lectures,
       total_sections,
-      image,
       thumbnail_image,
-      video_preview_url,
       preview_video_url,
       instructor_id,
       instructor_name,
       instructor_bio,
       instructor_image,
-      learning_outcomes,
       what_you_will_learn,
       prerequisites,
       target_audience,
@@ -124,13 +121,18 @@ const createCourse = async (req, res) => {
       total_reviews,
       total_students,
       certificate_available,
-      completion_certificate_template
+      completion_certificate_template,
+      
+      // Legacy fields that need mapping
+      image, // maps to thumbnail_image
+      video_preview_url, // maps to preview_video_url
+      learning_outcomes // maps to what_you_will_learn
     } = req.body;
     
-    console.log('Extracted fields:', { uid, title, description, category, level });
+    console.log('Extracted fields:', { uid, title, category, level });
     
-    // Use authenticated user ID if available, otherwise use a known admin UUID
-    const createdBy = req.userId || 'bca2f806-29c5-4be9-bc2d-a484671546cd';
+    // The UID has already been verified by checkAdminByUid middleware
+    const createdBy = uid;
     
     const insertData = {
       title,
@@ -146,8 +148,8 @@ const createCourse = async (req, res) => {
       duration_hours: duration_hours || null,
       total_lectures: total_lectures || 0,
       total_sections: total_sections || 0,
-      thumbnail_image: thumbnail_image || image || null,
-      preview_video_url: preview_video_url || video_preview_url || null,
+      thumbnail_image: thumbnail_image || image || null, // Use thumbnail_image or fallback to image
+      preview_video_url: preview_video_url || video_preview_url || null, // Use preview_video_url or fallback to video_preview_url
       instructor_id: instructor_id || null,
       instructor_name,
       instructor_bio: instructor_bio || null,
@@ -167,61 +169,29 @@ const createCourse = async (req, res) => {
       total_reviews: total_reviews || 0,
       total_students: total_students || 0,
       certificate_available: certificate_available !== undefined ? certificate_available : true,
-      completion_certificate_template: completion_certificate_template || null
+      completion_certificate_template: completion_certificate_template || null,
+      created_by: createdBy
     };
     
     console.log('Insert data:', insertData);
     
-    // Try to create course with created_by field first
-    let { data: course, error } = await supabaseAdmin()
+    // Use admin client to bypass RLS for admin operations
+    const { data: course, error } = await supabaseAdmin()
       .from('courses')
-      .insert([{ ...insertData, created_by: createdBy }])
+      .insert([insertData])
       .select()
       .single();
       
     if (error) {
-      console.error('Supabase error creating course with created_by:', error);
-      
-      // If created_by column doesn't exist or causes constraint issues, try without it
-      if (error.message.includes('created_by') || error.message.includes('not-null constraint')) {
-        console.log('Trying to create course without created_by field...');
-        
-        const { data: course2, error: error2 } = await supabaseAdmin()
-          .from('courses')
-          .insert([insertData])
-          .select()
-          .single();
-          
-        if (error2) {
-          console.error('Supabase error creating course without created_by:', error2);
-          return res.status(500).json({ 
-            error: 'Failed to create course', 
-            details: error2.message 
-          });
-        }
-        
-        course = course2;
-        console.log('Course created successfully without created_by field:', course);
-      } else {
-        return res.status(500).json({ 
-          error: 'Failed to create course', 
-          details: error.message 
-        });
-      }
-    } else {
-      console.log('Course created successfully with created_by field:', course);
+      console.error('Supabase error creating course:', error);
+      return res.status(500).json({ error: 'Failed to create course', details: error.message });
     }
     
-    if (!course) {
-      return res.status(500).json({ 
-        error: 'Failed to create course', 
-        details: 'No course data returned from database'
-      });
-    }
+    console.log('Course created successfully:', course);
     
     res.status(201).json({ 
       message: 'Course created successfully', 
-      data: course 
+      course 
     });
   } catch (error) {
     console.error('Create course error:', error);

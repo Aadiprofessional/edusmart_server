@@ -1,20 +1,20 @@
 import express from 'express';
 const router = express.Router();
-import userController from '../controllers/userController.js';
+import { getAllUsers, getUserById, updateUser, deleteUser, getUserStats } from '../controllers/userController.js';
 
 // Get all users (admin only)
-router.get('/', userController.getAllUsers);
+router.get('/', getAllUsers);
 
 // Get user statistics (must come before /:id route)
-router.get('/stats/overview', userController.getUserStats);
+router.get('/stats/overview', getUserStats);
 
 // Get user by ID
-router.get('/:id', userController.getUserById);
+router.get('/:id', getUserById);
 
 // Update user
-router.put('/:id', userController.updateUser);
+router.put('/:id', updateUser);
 
 // Delete user
-router.delete('/:id', userController.deleteUser);
+router.delete('/:id', deleteUser);
 
 export default router; 

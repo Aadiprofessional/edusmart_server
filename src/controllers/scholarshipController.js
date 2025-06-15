@@ -4,61 +4,51 @@ import { v4 as uuidv4 } from 'uuid';
 // Get all scholarships with pagination and filtering
 const getScholarships = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const { page = 1, limit = 10, country, minAmount, search } = req.query;
     const offset = (page - 1) * limit;
     
-    const country = req.query.country;
-    const type = req.query.type;
-    const search = req.query.search;
-
-    let query = supabaseAdmin()
+    let query = supabase
       .from('scholarships')
       .select('*', { count: 'exact' });
-
-    // Apply filters
+      
+    // Apply filters if provided
     if (country) {
       query = query.eq('country', country);
     }
     
-    if (type) {
-      query = query.eq('type', type);
+    if (minAmount) {
+      query = query.gte('amount', minAmount);
     }
     
     if (search) {
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,university.ilike.%${search}%`);
     }
-
+    
+    // Apply pagination
     const { data: scholarships, error, count } = await query
-      .range(offset, offset + limit - 1)
-      .order('name', { ascending: true });
-
+      .order('deadline', { ascending: true })
+      .range(offset, offset + limit - 1);
+      
     if (error) {
       console.error('Error fetching scholarships:', error);
-      return res.status(500).json({ 
-        error: 'Server error fetching scholarships',
-        details: error.message 
-      });
+      return res.status(500).json({ error: 'Failed to fetch scholarships' });
     }
-
+    
+    // Calculate total pages
     const totalPages = Math.ceil(count / limit);
-
+    
     res.status(200).json({
-      success: true,
-      data: scholarships,
+      scholarships,
       pagination: {
-        currentPage: page,
-        totalPages,
         totalItems: count,
-        itemsPerPage: limit
+        totalPages,
+        currentPage: parseInt(page),
+        itemsPerPage: parseInt(limit)
       }
     });
   } catch (error) {
     console.error('Get scholarships error:', error);
-    res.status(500).json({ 
-      error: 'Server error fetching scholarships',
-      details: error.message 
-    });
+    res.status(500).json({ error: 'Server error fetching scholarships' });
   }
 };
 

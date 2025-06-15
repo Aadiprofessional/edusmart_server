@@ -34,61 +34,130 @@ const generateUniqueSlug = async (name) => {
 // Get all universities with pagination and filtering
 const getAllUniversities = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const { 
+      page = 1, 
+      limit = 10, 
+      country, 
+      search, 
+      region,
+      state,
+      type,
+      major,
+      rankingType,
+      qsRankingRange,
+      rankingYear,
+      admissionDifficulty,
+      campusType,
+      studentPopulation,
+      acceptanceRate,
+      showOnlyOpenApplications
+    } = req.query;
+    
     const offset = (page - 1) * limit;
     
-    const country = req.query.country;
-    const type = req.query.type;
-    const search = req.query.search;
-
-    let query = supabaseAdmin()
+    let query = supabase
       .from('universities')
       .select('*', { count: 'exact' });
-
-    // Apply filters
+      
+    // Apply filters if provided
     if (country) {
       query = query.eq('country', country);
     }
-    
+
+    if (state) {
+      query = query.eq('state', state);
+    }
+
     if (type) {
       query = query.eq('type', type);
     }
-    
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,city.ilike.%${search}%`);
+
+    if (region) {
+      query = query.eq('region', region);
     }
 
+    if (major && major !== '') {
+      query = query.contains('programs_offered', [major]);
+    }
+
+    if (rankingType) {
+      query = query.eq('ranking_type', rankingType);
+    }
+
+    if (qsRankingRange) {
+      const maxRanking = parseInt(qsRankingRange);
+      if (!isNaN(maxRanking)) {
+        query = query.lte('ranking', maxRanking);
+      }
+    }
+
+    if (rankingYear) {
+      query = query.eq('ranking_year', parseInt(rankingYear));
+    }
+
+    if (campusType) {
+      query = query.eq('campus_type', campusType);
+    }
+
+    // Student population filter
+    if (studentPopulation) {
+      switch (studentPopulation) {
+        case 'small':
+          query = query.lte('student_population', 15000);
+          break;
+        case 'medium':
+          query = query.gte('student_population', 15001).lte('student_population', 40000);
+          break;
+        case 'large':
+          query = query.gte('student_population', 40001);
+          break;
+      }
+    }
+
+    // Acceptance rate filter
+    if (acceptanceRate) {
+      switch (acceptanceRate) {
+        case 'low':
+          query = query.lte('acceptance_rate', 10);
+          break;
+        case 'medium':
+          query = query.gte('acceptance_rate', 11).lte('acceptance_rate', 50);
+          break;
+        case 'high':
+          query = query.gte('acceptance_rate', 51);
+          break;
+      }
+    }
+    
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,city.ilike.%${search}%,programs_offered.cs.{${search}}`);
+    }
+    
+    // Apply pagination
     const { data: universities, error, count } = await query
-      .range(offset, offset + limit - 1)
-      .order('name', { ascending: true });
+      .order('ranking', { ascending: true, nullsLast: true })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error('Error fetching universities:', error);
-      return res.status(500).json({ 
-        error: 'Server error fetching universities',
-        details: error.message 
-      });
+      return res.status(500).json({ error: 'Failed to fetch universities' });
     }
 
+    // Calculate total pages
     const totalPages = Math.ceil(count / limit);
 
     res.status(200).json({
-      success: true,
-      data: universities,
+      universities,
       pagination: {
-        currentPage: page,
-        totalPages,
         totalItems: count,
-        itemsPerPage: limit
+        totalPages,
+        currentPage: parseInt(page),
+        itemsPerPage: parseInt(limit)
       }
     });
   } catch (error) {
     console.error('Get universities error:', error);
-    res.status(500).json({ 
-      error: 'Server error fetching universities',
-      details: error.message 
-    });
+    res.status(500).json({ error: 'Server error fetching universities' });
   }
 };
 
@@ -118,9 +187,8 @@ const getUniversityById = async (req, res) => {
 // Create new university (Admin only)
 const createUniversity = async (req, res) => {
   try {
-    console.log('Request body:', req.body);
-    
-    const { 
+    const {
+      uid,
       name,
       description,
       country,
@@ -150,107 +218,121 @@ const createUniversity = async (req, res) => {
       keywords,
       region,
       ranking_type,
-      ranking_year
+      ranking_year,
+      // New admission requirements fields
+      min_gpa_required,
+      sat_score_required,
+      act_score_required,
+      ielts_score_required,
+      toefl_score_required,
+      gre_score_required,
+      gmat_score_required,
+      // Application deadlines
+      application_deadline_fall,
+      application_deadline_spring,
+      application_deadline_summer,
+      // Financial information
+      tuition_fee_graduate,
+      scholarship_available,
+      financial_aid_available,
+      // Additional admission requirements
+      application_requirements,
+      admission_essay_required,
+      letters_of_recommendation_required,
+      interview_required,
+      work_experience_required,
+      portfolio_required
     } = req.body;
-    
-    console.log('Extracted fields:', { name, country, city, type });
-    
-    // Use authenticated user ID if available
-    const createdBy = req.userId || 'bca2f806-29c5-4be9-bc2d-a484671546cd';
-    
-    // Generate slug from name
-    const slug = name ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
-    
-    const insertData = {
-      name,
-      description: description || '',
-      country,
-      city: city || '',
-      state: state || null,
-      address: address || null,
-      website: website || null,
-      contact_email: contact_email || null,
-      contact_phone: contact_phone || null,
-      established_year: established_year ? parseInt(established_year) : null,
-      type: type || 'public',
-      ranking: ranking ? parseInt(ranking) : null,
-      tuition_fee: tuition_fee ? parseFloat(tuition_fee) : null,
-      application_fee: application_fee ? parseFloat(application_fee) : null,
-      acceptance_rate: acceptance_rate ? parseFloat(acceptance_rate) : null,
-      student_population: student_population ? parseInt(student_population) : null,
-      faculty_count: faculty_count ? parseInt(faculty_count) : null,
-      programs_offered: programs_offered || [],
-      facilities: facilities || [],
-      image: image || null,
-      logo: logo || null,
-      gallery: gallery || [],
-      campus_size: campus_size || null,
-      campus_type: campus_type || null,
-      accreditation: accreditation || null,
-      notable_alumni: notable_alumni || [],
-      slug,
-      keywords: keywords || [],
-      region: region || null,
-      ranking_type: ranking_type || null,
-      ranking_year: ranking_year ? parseInt(ranking_year) : null
-    };
 
-    console.log('Insert data:', insertData);
+    // The UID has already been verified by checkAdminByUid middleware
+    const createdBy = uid;
 
-    // Try to create university with created_by field first
-    let { data: university, error } = await supabaseAdmin()
+    // Generate unique slug
+    const slug = await generateUniqueSlug(name);
+
+    // Use admin client to bypass RLS for admin operations
+    const { data: university, error } = await supabaseAdmin
       .from('universities')
-      .insert([{ ...insertData, created_by: createdBy }])
+      .insert([
+        {
+          id: uuidv4(),
+          name,
+          description,
+          country,
+          city,
+          state,
+          address,
+          website,
+          contact_email,
+          contact_phone,
+          established_year: established_year ? parseInt(established_year) : null,
+          type,
+          ranking: ranking ? parseInt(ranking) : null,
+          tuition_fee: tuition_fee ? parseFloat(tuition_fee) : null,
+          application_fee: application_fee ? parseFloat(application_fee) : null,
+          acceptance_rate: acceptance_rate ? parseFloat(acceptance_rate) : null,
+          student_population: student_population ? parseInt(student_population) : null,
+          faculty_count: faculty_count ? parseInt(faculty_count) : null,
+          programs_offered: programs_offered || [],
+          facilities: facilities || [],
+          image,
+          logo,
+          gallery: gallery || [],
+          campus_size,
+          campus_type,
+          accreditation,
+          notable_alumni: notable_alumni || [],
+          slug,
+          keywords: keywords || [],
+          region,
+          ranking_type,
+          ranking_year: ranking_year ? parseInt(ranking_year) : null,
+          // New admission requirements fields
+          min_gpa_required: min_gpa_required ? parseFloat(min_gpa_required) : null,
+          sat_score_required,
+          act_score_required,
+          ielts_score_required,
+          toefl_score_required,
+          gre_score_required,
+          gmat_score_required,
+          // Application deadlines
+          application_deadline_fall,
+          application_deadline_spring,
+          application_deadline_summer,
+          // Financial information
+          tuition_fee_graduate: tuition_fee_graduate ? parseInt(tuition_fee_graduate) : null,
+          scholarship_available: scholarship_available || false,
+          financial_aid_available: financial_aid_available || false,
+          // Additional admission requirements
+          application_requirements: application_requirements || [],
+          admission_essay_required: admission_essay_required || false,
+          letters_of_recommendation_required: letters_of_recommendation_required ? parseInt(letters_of_recommendation_required) : 0,
+          interview_required: interview_required || false,
+          work_experience_required: work_experience_required || false,
+          portfolio_required: portfolio_required || false,
+          status: 'active',
+          featured: false,
+          verified: false,
+          created_by: createdBy,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      ])
       .select()
       .single();
-      
+
     if (error) {
-      console.error('Supabase error creating university with created_by:', error);
-      
-      // If created_by column doesn't exist or causes constraint issues, try without it
-      if (error.message.includes('created_by') || error.message.includes('column') || error.message.includes('does not exist')) {
-        console.log('Trying to create university without created_by field...');
-        
-        const { data: university2, error: error2 } = await supabaseAdmin()
-          .from('universities')
-          .insert([insertData])
-          .select()
-          .single();
-          
-        if (error2) {
-          console.error('Supabase error creating university without created_by:', error2);
-          return res.status(500).json({ 
-            error: 'Failed to create university', 
-            details: error2.message 
-          });
-        }
-        
-        university = university2;
-        console.log('University created successfully without created_by field:', university);
-      } else {
-        return res.status(500).json({ 
-          error: 'Failed to create university', 
-          details: error.message 
-        });
-      }
-    } else {
-      console.log('University created successfully with created_by field:', university);
+      console.error('Error creating university:', error);
+      return res.status(500).json({ error: 'Failed to create university' });
     }
-    
-    if (!university) {
-      return res.status(500).json({ 
-        error: 'Failed to create university', 
-        details: 'No university data returned from database'
-      });
-    }
-    
-    res.status(201).json({ 
-      message: 'University created successfully', 
-      data: university 
+
+    res.status(201).json({
+      message: 'University created successfully',
+      university
     });
   } catch (error) {
     console.error('Create university error:', error);
-    res.status(500).json({ error: 'Server error creating university', details: error.message });
+    res.status(500).json({ error: 'Server error creating university' });
   }
 };
 

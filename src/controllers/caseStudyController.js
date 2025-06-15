@@ -4,61 +4,64 @@ import { v4 as uuidv4 } from 'uuid';
 // Get all case studies with pagination and filtering
 const getCaseStudies = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const { page = 1, limit = 10, category, outcome, country, field, search, featured } = req.query;
     const offset = (page - 1) * limit;
     
-    const category = req.query.category;
-    const country = req.query.country;
-    const search = req.query.search;
-
-    let query = supabaseAdmin()
+    let query = supabase
       .from('case_studies')
-      .select('*', { count: 'exact' });
-
-    // Apply filters
+      .select('*', { count: 'exact' })
+      .eq('status', 'published'); // Only show published case studies
+      
+    // Apply filters if provided
     if (category) {
       query = query.eq('category', category);
+    }
+    
+    if (outcome) {
+      query = query.eq('outcome', outcome);
     }
     
     if (country) {
       query = query.eq('target_country', country);
     }
     
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,student_name.ilike.%${search}%`);
+    if (field) {
+      query = query.eq('field_of_study', field);
     }
-
+    
+    if (featured !== undefined) {
+      query = query.eq('featured', featured === 'true');
+    }
+    
+    if (search) {
+      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,student_name.ilike.%${search}%,tags.cs.{${search}}`);
+    }
+    
+    // Apply pagination
     const { data: caseStudies, error, count } = await query
-      .range(offset, offset + limit - 1)
-      .order('created_at', { ascending: false });
-
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+      
     if (error) {
       console.error('Error fetching case studies:', error);
-      return res.status(500).json({ 
-        error: 'Server error fetching case studies',
-        details: error.message 
-      });
+      return res.status(500).json({ error: 'Failed to fetch case studies' });
     }
-
+    
+    // Calculate total pages
     const totalPages = Math.ceil(count / limit);
-
+    
     res.status(200).json({
-      success: true,
-      data: caseStudies,
+      caseStudies,
       pagination: {
-        currentPage: page,
-        totalPages,
         totalItems: count,
-        itemsPerPage: limit
+        totalPages,
+        currentPage: parseInt(page),
+        itemsPerPage: parseInt(limit)
       }
     });
   } catch (error) {
     console.error('Get case studies error:', error);
-    res.status(500).json({ 
-      error: 'Server error fetching case studies',
-      details: error.message 
-    });
+    res.status(500).json({ error: 'Server error fetching case studies' });
   }
 };
 

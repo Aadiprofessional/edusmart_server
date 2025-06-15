@@ -252,6 +252,10 @@ export async function onRequest(context) {
         await getBlogs(req, res);
       } else if (path === '/blogs' && method === 'POST') {
         await createBlog(req, res);
+      } else if (path === '/blog-categories' && method === 'GET') {
+        await getBlogCategories(req, res);
+      } else if (path === '/blog-tags' && method === 'GET') {
+        await getBlogTags(req, res);
       } else if (path === '/blogs/categories' && method === 'GET') {
         await getBlogCategories(req, res);
       } else if (path === '/blogs/tags' && method === 'GET') {
