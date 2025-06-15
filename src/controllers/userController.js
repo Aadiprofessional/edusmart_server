@@ -1,14 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabaseAdmin } from '../utils/supabase.js';
 
 // Get all users
 const getAllUsers = async (req, res) => {
   try {
-    const { data: profiles, error } = await supabase
+    const { data: profiles, error } = await supabaseAdmin()
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
@@ -34,7 +29,7 @@ const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { data: profile, error } = await supabase
+    const { data: profile, error } = await supabaseAdmin()
       .from('profiles')
       .select('*')
       .eq('id', id)
@@ -69,7 +64,7 @@ const updateUser = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    const { data: profile, error } = await supabase
+    const { data: profile, error } = await supabaseAdmin()
       .from('profiles')
       .update(updateData)
       .eq('id', id)
@@ -99,7 +94,7 @@ const deleteUser = async (req, res) => {
     const { id } = req.params;
 
     // Delete user profile
-    const { error } = await supabase
+    const { error } = await supabaseAdmin()
       .from('profiles')
       .delete()
       .eq('id', id);
@@ -124,14 +119,14 @@ const deleteUser = async (req, res) => {
 const getUserStats = async (req, res) => {
   try {
     // Get total users count
-    const { count: totalUsers, error: usersError } = await supabase
+    const { count: totalUsers, error: usersError } = await supabaseAdmin()
       .from('profiles')
       .select('*', { count: 'exact', head: true });
 
     if (usersError) throw usersError;
 
     // Get admin users count
-    const { count: adminUsers, error: adminError } = await supabase
+    const { count: adminUsers, error: adminError } = await supabaseAdmin()
       .from('profiles')
       .select('*', { count: 'exact', head: true })
       .eq('role', 'admin');
@@ -143,7 +138,7 @@ const getUserStats = async (req, res) => {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const { count: newUsersThisMonth, error: newUsersError } = await supabase
+    const { count: newUsersThisMonth, error: newUsersError } = await supabaseAdmin()
       .from('profiles')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', startOfMonth.toISOString());

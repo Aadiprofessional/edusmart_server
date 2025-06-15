@@ -10,7 +10,7 @@ const register = async (req, res) => {
     }
 
     // Sign up user with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabase().auth.signUp({
       email,
       password,
       options: {
@@ -35,7 +35,7 @@ const register = async (req, res) => {
     // Check if profile was created by trigger, if not create it manually
     let profile = null;
     try {
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile } = await supabase()
         .from('profiles')
         .select('*')
         .eq('id', authData.user.id)
@@ -46,7 +46,7 @@ const register = async (req, res) => {
       // Profile doesn't exist, create it manually using admin client
       console.log('Profile not found, creating manually...');
       try {
-        const { data: newProfile, error: profileError } = await supabaseAdmin
+        const { data: newProfile, error: profileError } = await supabaseAdmin()
           .from('profiles')
           .insert([
             {
@@ -98,7 +98,7 @@ const login = async (req, res) => {
     }
 
     // Sign in with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: authError } = await supabase().auth.signInWithPassword({
       email,
       password
     });
@@ -115,7 +115,7 @@ const login = async (req, res) => {
     // Get user profile from our profiles table
     let profile = null;
     try {
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile } = await supabase()
         .from('profiles')
         .select('id, email, name, role, created_at')
         .eq('id', authData.user.id)
@@ -126,7 +126,7 @@ const login = async (req, res) => {
       console.error('Profile fetch error:', profileError);
       // Try to create profile if it doesn't exist
       try {
-        const { data: newProfile } = await supabaseAdmin
+        const { data: newProfile } = await supabaseAdmin()
           .from('profiles')
           .insert([
             {
@@ -174,7 +174,7 @@ const getProfile = async (req, res) => {
     const token = authHeader.split(' ')[1];
 
     // Get user from Supabase Auth using the token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabase().auth.getUser(token);
 
     if (authError || !user) {
       return res.status(401).json({ error: 'Invalid token' });
@@ -183,7 +183,7 @@ const getProfile = async (req, res) => {
     // Get user profile from our profiles table
     let profile = null;
     try {
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile } = await supabase()
         .from('profiles')
         .select('id, email, name, role, created_at, avatar_url')
         .eq('id', user.id)
@@ -194,7 +194,7 @@ const getProfile = async (req, res) => {
       console.error('Profile fetch error:', profileError);
       // Try to create profile if it doesn't exist
       try {
-        const { data: newProfile } = await supabaseAdmin
+        const { data: newProfile } = await supabaseAdmin()
           .from('profiles')
           .insert([
             {
@@ -237,7 +237,7 @@ const logout = async (req, res) => {
     const token = authHeader.split(' ')[1];
 
     // Sign out from Supabase Auth
-    const { error } = await supabase.auth.admin.signOut(token);
+    const { error } = await supabase().auth.admin.signOut(token);
 
     if (error) {
       console.error('Logout error:', error);
@@ -260,7 +260,7 @@ const refreshToken = async (req, res) => {
       return res.status(400).json({ error: 'Refresh token is required' });
     }
 
-    const { data, error } = await supabase.auth.refreshSession({
+    const { data, error } = await supabase().auth.refreshSession({
       refresh_token
     });
 
