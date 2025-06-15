@@ -7,7 +7,7 @@ const getCourses = async (req, res) => {
     const { page = 1, limit = 10, category, level, search, featured } = req.query;
     const offset = (page - 1) * limit;
     
-    let query = supabase
+    let query = supabase()
       .from('courses')
       .select('*', { count: 'exact' })
       .eq('status', 'active'); // Only show active courses
@@ -62,7 +62,7 @@ const getCourseById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { data: course, error } = await supabase
+    const { data: course, error } = await supabase()
       .from('courses')
       .select('*')
       .eq('id', id)
@@ -176,7 +176,7 @@ const createCourse = async (req, res) => {
     console.log('Insert data:', insertData);
     
     // Use admin client to bypass RLS for admin operations
-    const { data: course, error } = await supabaseAdmin
+    const { data: course, error } = await supabaseAdmin()
       .from('courses')
       .insert([insertData])
       .select()
@@ -248,7 +248,7 @@ const updateCourse = async (req, res) => {
     } = req.body;
     
     // First check if the course exists
-    const { data: existingCourse, error: fetchError } = await supabase
+    const { data: existingCourse, error: fetchError } = await supabase()
       .from('courses')
       .select('created_by')
       .eq('id', id)
@@ -259,7 +259,7 @@ const updateCourse = async (req, res) => {
     }
     
     // Update the course using admin client (admin can update any course)
-    const { data: updatedCourse, error } = await supabaseAdmin
+    const { data: updatedCourse, error } = await supabaseAdmin()
       .from('courses')
       .update({
         title,
@@ -325,7 +325,7 @@ const deleteCourse = async (req, res) => {
     const { uid } = req.body;
     
     // First check if the course exists
-    const { data: existingCourse, error: fetchError } = await supabase
+    const { data: existingCourse, error: fetchError } = await supabase()
       .from('courses')
       .select('created_by')
       .eq('id', id)
@@ -336,7 +336,7 @@ const deleteCourse = async (req, res) => {
     }
     
     // Delete the course using admin client (admin can delete any course)
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin()
       .from('courses')
       .delete()
       .eq('id', id);
@@ -358,7 +358,7 @@ const deleteCourse = async (req, res) => {
 // Get course categories
 const getCourseCategories = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase()
       .from('courses')
       .select('category')
       .order('category');
@@ -381,7 +381,7 @@ const getCourseCategories = async (req, res) => {
 // Get course levels
 const getCourseLevels = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase()
       .from('courses')
       .select('level')
       .order('level');
