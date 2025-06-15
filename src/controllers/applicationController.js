@@ -1,14 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabase, supabaseAdmin } from '../utils/supabase.js';
 
 // Get all applications
 const getAllApplications = async (req, res) => {
   try {
-    const { data: applications, error } = await supabase
+    const { data: applications, error } = await supabaseAdmin()
       .from('applications')
       .select(`
         *,
@@ -37,7 +32,7 @@ const getApplicationById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { data: application, error } = await supabase
+    const { data: application, error } = await supabaseAdmin()
       .from('applications')
       .select(`
         *,
@@ -74,7 +69,7 @@ const createApplication = async (req, res) => {
   try {
     const applicationData = req.body;
 
-    const { data: application, error } = await supabase
+    const { data: application, error } = await supabaseAdmin()
       .from('applications')
       .insert([applicationData])
       .select()
@@ -103,7 +98,7 @@ const updateApplication = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    const { data: application, error } = await supabase
+    const { data: application, error } = await supabaseAdmin()
       .from('applications')
       .update(updateData)
       .eq('id', id)
@@ -132,7 +127,7 @@ const deleteApplication = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin()
       .from('applications')
       .delete()
       .eq('id', id);
@@ -158,7 +153,7 @@ const getApplicationsByUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const { data: applications, error } = await supabase
+    const { data: applications, error } = await supabaseAdmin()
       .from('applications')
       .select('*')
       .eq('user_id', userId)
@@ -186,7 +181,7 @@ const updateApplicationStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const { data: application, error } = await supabase
+    const { data: application, error } = await supabaseAdmin()
       .from('applications')
       .update({ status })
       .eq('id', id)
@@ -213,44 +208,22 @@ const updateApplicationStatus = async (req, res) => {
 // Get application statistics
 const getApplicationStats = async (req, res) => {
   try {
-    // Get total applications count
-    const { count: totalApplications, error: totalError } = await supabase
+    const { data: applications, error } = await supabaseAdmin()
       .from('applications')
-      .select('*', { count: 'exact', head: true });
+      .select('status');
 
-    if (totalError) throw totalError;
+    if (error) throw error;
 
-    // Get applications by status
-    const { data: statusData, error: statusError } = await supabase
-      .from('applications')
-      .select('status')
-      .not('status', 'is', null);
-
-    if (statusError) throw statusError;
-
-    const statusCounts = statusData.reduce((acc, app) => {
+    const stats = applications.reduce((acc, app) => {
       acc[app.status] = (acc[app.status] || 0) + 1;
       return acc;
     }, {});
 
-    // Get applications this month
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    const { count: applicationsThisMonth, error: monthError } = await supabase
-      .from('applications')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', startOfMonth.toISOString());
-
-    if (monthError) throw monthError;
-
     res.json({
       success: true,
       data: {
-        totalApplications: totalApplications || 0,
-        applicationsThisMonth: applicationsThisMonth || 0,
-        statusBreakdown: statusCounts
+        total: applications.length,
+        ...stats
       }
     });
   } catch (error) {
@@ -263,7 +236,37 @@ const getApplicationStats = async (req, res) => {
   }
 };
 
-export default {
+// Get applications by status
+const getApplicationsByStatus = async (req, res) => {
+  try {
+    const { status } = req.params;
+
+    const { data: applications, error } = await supabaseAdmin()
+      .from('applications')
+      .select(`
+        *,
+        profiles:user_id(full_name, email)
+      `)
+      .eq('status', status)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data: applications
+    });
+  } catch (error) {
+    console.error('Error fetching applications by status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch applications by status',
+      error: error.message
+    });
+  }
+};
+
+const applicationController = {
   getAllApplications,
   getApplicationById,
   createApplication,
@@ -271,5 +274,8 @@ export default {
   deleteApplication,
   getApplicationsByUser,
   updateApplicationStatus,
-  getApplicationStats
-}; 
+  getApplicationStats,
+  getApplicationsByStatus
+};
+
+export default applicationController; 
