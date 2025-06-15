@@ -64,26 +64,54 @@ const updateUser = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    const { data: profile, error } = await supabaseAdmin()
+    // Remove protected fields
+    delete updateData.id;
+    delete updateData.created_at;
+    delete updateData.updated_at;
+
+    // Map full_name to name if provided
+    if (updateData.full_name) {
+      updateData.name = updateData.full_name;
+      delete updateData.full_name;
+    }
+
+    // Add updated_at timestamp
+    updateData.updated_at = new Date().toISOString();
+
+    const { data: user, error } = await supabaseAdmin()
       .from('profiles')
       .update(updateData)
       .eq('id', id)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Update user error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Failed to update user',
+        error: error.message 
+      });
+    }
 
-    res.json({
-      success: true,
-      data: profile,
-      message: 'User updated successfully'
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      data: user,
+      message: 'User updated successfully' 
     });
   } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update user',
-      error: error.message
+    console.error('Update user error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error updating user',
+      error: error.message 
     });
   }
 };

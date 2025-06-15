@@ -4,14 +4,19 @@ import { v4 as uuidv4 } from 'uuid';
 // Get all responses with pagination and filtering
 const getResponses = async (req, res) => {
   try {
-    const { page = 1, limit = 10, category, type, search, featured } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     
-    let query = supabase
+    const category = req.query.category;
+    const type = req.query.type;
+    const search = req.query.search;
+
+    let query = supabaseAdmin()
       .from('responses')
       .select('*', { count: 'exact' });
-      
-    // Apply filters if provided
+
+    // Apply filters
     if (category) {
       query = query.eq('category', category);
     }
@@ -20,39 +25,40 @@ const getResponses = async (req, res) => {
       query = query.eq('type', type);
     }
     
-    if (featured !== undefined) {
-      query = query.eq('featured', featured === 'true');
-    }
-    
     if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,tags.cs.{${search}}`);
+      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
     }
-    
-    // Apply pagination
+
     const { data: responses, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-      
+      .range(offset, offset + limit - 1)
+      .order('created_at', { ascending: false });
+
     if (error) {
       console.error('Error fetching responses:', error);
-      return res.status(500).json({ error: 'Failed to fetch responses' });
+      return res.status(500).json({ 
+        error: 'Server error fetching responses',
+        details: error.message 
+      });
     }
-    
-    // Calculate total pages
+
     const totalPages = Math.ceil(count / limit);
-    
+
     res.status(200).json({
-      responses,
+      success: true,
+      data: responses,
       pagination: {
-        totalItems: count,
+        currentPage: page,
         totalPages,
-        currentPage: parseInt(page),
-        itemsPerPage: parseInt(limit)
+        totalItems: count,
+        itemsPerPage: limit
       }
     });
   } catch (error) {
     console.error('Get responses error:', error);
-    res.status(500).json({ error: 'Server error fetching responses' });
+    res.status(500).json({ 
+      error: 'Server error fetching responses',
+      details: error.message 
+    });
   }
 };
 

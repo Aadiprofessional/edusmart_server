@@ -1,21 +1,39 @@
 import { supabase, supabaseAdmin } from '../utils/supabase.js';
 
-// Get all applications
+// Get all applications with pagination
 const getAllApplications = async (req, res) => {
   try {
-    const { data: applications, error } = await supabaseAdmin()
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Get applications with basic user info
+    const { data: applications, error, count } = await supabaseAdmin()
       .from('applications')
-      .select(`
-        *,
-        profiles:user_id(full_name, email)
-      `)
+      .select('*, profiles:user_id(name, email)', { count: 'exact' })
+      .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching applications:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch applications',
+        error: error.message
+      });
+    }
 
-    res.json({
+    const totalPages = Math.ceil(count / limit);
+
+    res.status(200).json({
       success: true,
-      data: applications
+      data: applications,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: count,
+        itemsPerPage: limit
+      }
     });
   } catch (error) {
     console.error('Error fetching applications:', error);
@@ -34,23 +52,21 @@ const getApplicationById = async (req, res) => {
 
     const { data: application, error } = await supabaseAdmin()
       .from('applications')
-      .select(`
-        *,
-        profiles:user_id(full_name, email)
-      `)
+      .select('*, profiles:user_id(name, email)')
       .eq('id', id)
       .single();
 
-    if (error) throw error;
-
-    if (!application) {
-      return res.status(404).json({
-        success: false,
-        message: 'Application not found'
-      });
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({
+          success: false,
+          message: 'Application not found'
+        });
+      }
+      throw error;
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: application
     });
@@ -67,15 +83,42 @@ const getApplicationById = async (req, res) => {
 // Create new application
 const createApplication = async (req, res) => {
   try {
-    const applicationData = req.body;
+    const applicationData = { ...req.body };
+    
+    // Use authenticated user ID if available
+    if (req.userId) {
+      applicationData.user_id = req.userId;
+    }
+    
+    // Remove protected fields
+    delete applicationData.id;
+    delete applicationData.created_at;
+    delete applicationData.updated_at;
+
+    // Set default values for required fields
+    const insertData = {
+      user_id: applicationData.user_id,
+      type: applicationData.type || 'general',
+      status: applicationData.status || 'pending',
+      data: applicationData.data || {},
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
     const { data: application, error } = await supabaseAdmin()
       .from('applications')
-      .insert([applicationData])
+      .insert([insertData])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating application:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create application',
+        error: error.message
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -96,7 +139,15 @@ const createApplication = async (req, res) => {
 const updateApplication = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = { ...req.body };
+
+    // Remove protected fields
+    delete updateData.id;
+    delete updateData.created_at;
+    delete updateData.user_id;
+
+    // Add updated timestamp
+    updateData.updated_at = new Date().toISOString();
 
     const { data: application, error } = await supabaseAdmin()
       .from('applications')
@@ -105,9 +156,17 @@ const updateApplication = async (req, res) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({
+          success: false,
+          message: 'Application not found'
+        });
+      }
+      throw error;
+    }
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: application,
       message: 'Application updated successfully'
@@ -132,9 +191,11 @@ const deleteApplication = async (req, res) => {
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: 'Application deleted successfully'
     });
