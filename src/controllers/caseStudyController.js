@@ -1,5 +1,5 @@
-const { supabase, supabaseAdmin } = require('../utils/supabase');
-const { v4: uuidv4 } = require('uuid');
+import { supabase, supabaseAdmin } from '../utils/supabase.js';
+import { v4 as uuidv4 } from 'uuid';
 
 // Get all case studies with pagination and filtering
 const getCaseStudies = async (req, res) => {
@@ -428,7 +428,7 @@ const getCaseStudyFields = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   getCaseStudies,
   getCaseStudyById,
   createCaseStudy,

@@ -1,5 +1,5 @@
-const { supabase, supabaseAdmin } = require('../utils/supabase');
-const { v4: uuidv4 } = require('uuid');
+import { supabase, supabaseAdmin } from '../utils/supabase.js';
+import { v4 as uuidv4 } from 'uuid';
 
 // Get all blogs with pagination and filtering
 const getBlogs = async (req, res) => {
@@ -304,7 +304,7 @@ const getBlogTags = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   getBlogs,
   getBlogById,
   createBlog,

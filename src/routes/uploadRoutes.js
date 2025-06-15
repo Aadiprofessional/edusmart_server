@@ -1,7 +1,7 @@
-const express = require('express');
-const multer = require('multer');
-const { supabaseAdmin } = require('../utils/supabase');
-const { v4: uuidv4 } = require('uuid');
+import express from 'express';
+import multer from 'multer';
+import { supabaseAdmin } from '../utils/supabase.js';
+import { v4 as uuidv4 } from 'uuid';
 const router = express.Router();
 
 // Configure multer for memory storage (we'll upload to Supabase instead of disk)
@@ -185,4 +185,4 @@ router.delete('/image/:path(*)', async (req, res) => {
   }
 });
 
-module.exports = router; 
+export default router; 

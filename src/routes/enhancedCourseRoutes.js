@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const {
+import {
   // Course management
   getCourses,
   getCourseById,
@@ -37,10 +37,10 @@ const {
   
   // AI Video Summary
   generateVideoSummary
-} = require('../controllers/enhancedCourseController');
+} from '../controllers/enhancedCourseController.js';
 
-const { checkAdminByUid } = require('../middlewares/auth');
-const { courseValidationRules } = require('../middlewares/validators');
+import { checkAdminByUid } from '../middlewares/auth.js';
+import { courseValidationRules } from '../middlewares/validators.js';
 
 // =============================================
 // PUBLIC ROUTES (No authentication required)
@@ -96,7 +96,7 @@ router.get('/courses/:courseId/enrollment/:userId', async (req, res) => {
   try {
     const { courseId, userId } = req.params;
     
-    const { data: enrollment, error } = await require('../utils/supabase').supabaseAdmin
+    const { data: enrollment, error } = await (await import('../utils/supabase.js')).supabaseAdmin
       .from('course_enrollments')
       .select('*')
       .eq('user_id', userId)
@@ -133,4 +133,4 @@ router.get('/enrolled/courses/:courseId/sections', getCourseSections);
 // AI Video Summary Generation
 router.post('/generate-video-summary', generateVideoSummary);
 
-module.exports = router; 
+export default router; 

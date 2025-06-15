@@ -1,4 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -263,7 +263,7 @@ const getApplicationStats = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   getAllApplications,
   getApplicationById,
   createApplication,

@@ -1,4 +1,4 @@
-const { supabase, supabaseAdmin } = require('../utils/supabase');
+import { supabase, supabaseAdmin } from '../utils/supabase.js';
 
 // Register a new user using Supabase Auth
 const register = async (req, res) => {
@@ -279,7 +279,7 @@ const refreshToken = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   register,
   login,
   getProfile,

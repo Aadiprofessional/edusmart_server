@@ -1,5 +1,5 @@
-const { supabase, supabaseAdmin } = require('../utils/supabase');
-const { v4: uuidv4 } = require('uuid');
+import { supabase, supabaseAdmin } from '../utils/supabase.js';
+import { v4 as uuidv4 } from 'uuid';
 
 // Get all scholarships with pagination and filtering
 const getScholarships = async (req, res) => {
@@ -281,7 +281,7 @@ const getScholarshipUniversities = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   getScholarships,
   getScholarshipById,
   createScholarship,

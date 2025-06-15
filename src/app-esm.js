@@ -1,21 +1,24 @@
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-const helmet = require('helmet');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
 
-// Import routes
-const authRoutes = require('./routes/authRoutes');
-const blogRoutes = require('./routes/blogRoutes');
-const courseRoutes = require('./routes/courseRoutes');
-const enhancedCourseRoutes = require('./routes/enhancedCourseRoutes');
-const caseStudyRoutes = require('./routes/caseStudyRoutes');
-const responseRoutes = require('./routes/responseRoutes');
-const scholarshipRoutes = require('./routes/scholarshipRoutes');
-const userRoutes = require('./routes/userRoutes');
-const userProfileRoutes = require('./routes/userProfileRoutes');
-const universityRoutes = require('./routes/universityRoutes');
-const uploadRoutes = require('./routes/uploadRoutes');
+// Configure dotenv
+dotenv.config();
+
+// Import routes (you'll need to convert these to ES modules too)
+import authRoutes from './routes/authRoutes.js';
+import blogRoutes from './routes/blogRoutes.js';
+import courseRoutes from './routes/courseRoutes.js';
+import enhancedCourseRoutes from './routes/enhancedCourseRoutes.js';
+import caseStudyRoutes from './routes/caseStudyRoutes.js';
+import responseRoutes from './routes/responseRoutes.js';
+import scholarshipRoutes from './routes/scholarshipRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import userProfileRoutes from './routes/userProfileRoutes.js';
+import universityRoutes from './routes/universityRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 // Initialize app
 const app = express();
@@ -45,9 +48,9 @@ const corsOptions = {
       'https://edusmart.vercel.app',
       'https://edusmart-admin.pages.dev',
       'https://edusmart-9z4.pages.dev',
-      // Add Cloudflare Workers domains
-      'https://edusmart-api.your-subdomain.workers.dev',
-      'https://edusmart-api-production.your-subdomain.workers.dev',
+      // Add Cloudflare Pages domains
+      'https://edusmart-api.pages.dev',
+      'https://your-project-name.pages.dev',
     ];
     
     // Check if origin is in allowed list
@@ -118,9 +121,8 @@ app.use((req, res, next) => {
       'https://edusmart.vercel.app',
       'https://edusmart-admin.pages.dev',
       'https://edusmart-9z4.pages.dev',
-      // Add Cloudflare Workers domains
-      'https://edusmart-api.your-subdomain.workers.dev',
-      'https://edusmart-api-production.your-subdomain.workers.dev',
+      'https://edusmart-api.pages.dev',
+      'https://your-project-name.pages.dev',
     ];
     
     const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
@@ -169,6 +171,7 @@ app.get('/', (req, res) => {
     message: 'Welcome to EduSmart API',
     version: '2.0.0',
     status: 'online',
+    platform: 'Cloudflare Pages',
     endpoints: {
       auth: '/api/auth',
       blogs: '/api/blogs',
@@ -196,12 +199,5 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Server error', message: err.message });
 });
 
-// Start server
-const PORT = process.env.PORT || 8000;
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}
-
-module.exports = app; 
+// Export the app for use in Cloudflare Pages Functions
+export default app; 

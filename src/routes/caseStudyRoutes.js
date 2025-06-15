@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { 
+import { 
   getCaseStudies, 
   getCaseStudyById, 
   createCaseStudy, 
@@ -10,9 +10,9 @@ const {
   getCaseStudyOutcomes,
   getCaseStudyCountries,
   getCaseStudyFields
-} = require('../controllers/caseStudyController');
-const { checkAdminByUid } = require('../middlewares/auth');
-const { caseStudyValidationRules } = require('../middlewares/validators');
+} from '../controllers/caseStudyController.js';
+import { checkAdminByUid } from '../middlewares/auth.js';
+import { caseStudyValidationRules } from '../middlewares/validators.js';
 
 // Public routes
 router.get('/', getCaseStudies);
@@ -27,4 +27,4 @@ router.post('/', checkAdminByUid, caseStudyValidationRules, createCaseStudy);
 router.put('/:id', checkAdminByUid, caseStudyValidationRules, updateCaseStudy);
 router.delete('/:id', checkAdminByUid, deleteCaseStudy);
 
-module.exports = router; 
+export default router; 

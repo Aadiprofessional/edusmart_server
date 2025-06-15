@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const {
+import {
   getAllUniversities,
   getUniversityById,
   createUniversity,
@@ -9,9 +9,9 @@ const {
   getUniversitiesByCountry,
   searchUniversities,
   getUniversityCountries
-} = require('../controllers/universityController');
-const { checkAdminByUid } = require('../middlewares/auth');
-const { universityValidationRules } = require('../middlewares/validators');
+} from '../controllers/universityController.js';
+import { checkAdminByUid } from '../middlewares/auth.js';
+import { universityValidationRules } from '../middlewares/validators.js';
 
 // Public routes
 router.get('/', getAllUniversities);
@@ -25,4 +25,4 @@ router.post('/', checkAdminByUid, universityValidationRules, createUniversity);
 router.put('/:id', checkAdminByUid, updateUniversity);
 router.delete('/:id', checkAdminByUid, deleteUniversity);
 
-module.exports = router; 
+export default router; 

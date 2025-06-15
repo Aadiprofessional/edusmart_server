@@ -1,4 +1,4 @@
-const { supabase, supabaseAdmin } = require('../utils/supabase');
+import { supabase, supabaseAdmin } from '../utils/supabase.js';
 
 // Middleware to validate user authentication using Supabase Auth
 const authenticateUser = async (req, res, next) => {
@@ -136,7 +136,7 @@ const checkAdminByUid = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   authenticateUser,
   authenticateUserWithProfile,
   validateUid,

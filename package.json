@@ -6,13 +6,18 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "deploy": "serverless deploy",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "cf:dev": "wrangler dev",
+    "cf:deploy": "wrangler deploy",
+    "cf:deploy:staging": "wrangler deploy --env staging",
+    "cf:deploy:production": "wrangler deploy --env production"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "Serverless API for EduSmart application",
   "dependencies": {
+    "@cloudflare/workers-types": "^4.20250614.0",
     "@supabase/supabase-js": "^2.49.4",
     "axios": "^1.9.0",
     "bcrypt": "^5.1.1",
