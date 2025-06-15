@@ -2,8 +2,8 @@
 // This avoids Express.js and its heavy Node.js dependencies
 
 // Import controllers directly
-import { login, register, verifyToken } from '../../src/controllers/authController.js';
-import { getUsers, getUserById, updateUser, deleteUser } from '../../src/controllers/userController.js';
+import { login, register, getProfile } from '../../src/controllers/authController.js';
+import { getAllUsers, getUserById, updateUser, deleteUser } from '../../src/controllers/userController.js';
 import { getBlogs, getBlogById, createBlog, updateBlog, deleteBlog } from '../../src/controllers/blogController.js';
 import { getCourses, getCourseById, createCourse, updateCourse, deleteCourse } from '../../src/controllers/courseController.js';
 
@@ -105,12 +105,12 @@ export async function onRequest(context) {
         await login(req, res);
       } else if (path === '/auth/register' && method === 'POST') {
         await register(req, res);
-      } else if (path === '/auth/verify' && method === 'POST') {
-        await verifyToken(req, res);
+      } else if (path === '/auth/profile' && method === 'GET') {
+        await getProfile(req, res);
       }
       // User routes
       else if (path === '/users' && method === 'GET') {
-        await getUsers(req, res);
+        await getAllUsers(req, res);
       } else if (path.startsWith('/users/') && method === 'GET') {
         req.params.id = path.split('/')[2];
         await getUserById(req, res);
