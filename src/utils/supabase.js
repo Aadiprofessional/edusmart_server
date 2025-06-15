@@ -1,9 +1,9 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+import { createClient } from '@supabase/supabase-js';
 
+// Environment variables are set globally in our Functions handler
 // Initialize Supabase client for regular operations
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Initialize Supabase client for admin operations (bypasses RLS)
@@ -15,4 +15,4 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   }
 });
 
-module.exports = { supabase, supabaseAdmin }; 
+export { supabase, supabaseAdmin }; 
