@@ -7,7 +7,7 @@ const getBlogs = async (req, res) => {
     const { page = 1, limit = 10, category, tag, search } = req.query;
     const offset = (page - 1) * limit;
     
-    let query = supabaseAdmin
+    let query = supabaseAdmin()
       .from('blogs')
       .select('*', { count: 'exact' });
       
@@ -40,7 +40,7 @@ const getBlogs = async (req, res) => {
       const authorIds = [...new Set(blogs.map(blog => blog.author_id).filter(Boolean))];
       
       if (authorIds.length > 0) {
-        const { data: authors, error: authorsError } = await supabaseAdmin
+        const { data: authors, error: authorsError } = await supabaseAdmin()
           .from('profiles')
           .select('id, name, avatar_url')
           .in('id', authorIds);
@@ -78,7 +78,7 @@ const getBlogById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { data: blog, error } = await supabaseAdmin
+    const { data: blog, error } = await supabaseAdmin()
       .from('blogs')
       .select('*')
       .eq('id', id)
@@ -92,7 +92,7 @@ const getBlogById = async (req, res) => {
     // Get author information separately
     let blogWithAuthor = blog;
     if (blog && blog.author_id) {
-      const { data: author, error: authorError } = await supabaseAdmin
+      const { data: author, error: authorError } = await supabaseAdmin()
         .from('profiles')
         .select('id, name, avatar_url')
         .eq('id', blog.author_id)
@@ -130,7 +130,7 @@ const createBlog = async (req, res) => {
     const authorId = uid;
     
     // Use admin client to bypass RLS for admin operations
-    const { data: blog, error } = await supabaseAdmin
+    const { data: blog, error } = await supabaseAdmin()
       .from('blogs')
       .insert([
         {
@@ -179,7 +179,7 @@ const updateBlog = async (req, res) => {
     } = req.body;
     
     // First check if the blog exists
-    const { data: existingBlog, error: fetchError } = await supabaseAdmin
+    const { data: existingBlog, error: fetchError } = await supabaseAdmin()
       .from('blogs')
       .select('author_id')
       .eq('id', id)
@@ -190,7 +190,7 @@ const updateBlog = async (req, res) => {
     }
     
     // Update the blog using admin client (admin can update any blog)
-    const { data: updatedBlog, error } = await supabaseAdmin
+    const { data: updatedBlog, error } = await supabaseAdmin()
       .from('blogs')
       .update({
         title,
@@ -227,7 +227,7 @@ const deleteBlog = async (req, res) => {
     const { uid } = req.body;
     
     // First check if the blog exists
-    const { data: existingBlog, error: fetchError } = await supabaseAdmin
+    const { data: existingBlog, error: fetchError } = await supabaseAdmin()
       .from('blogs')
       .select('author_id')
       .eq('id', id)
@@ -238,7 +238,7 @@ const deleteBlog = async (req, res) => {
     }
     
     // Delete the blog using admin client (admin can delete any blog)
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin()
       .from('blogs')
       .delete()
       .eq('id', id);
@@ -248,59 +248,63 @@ const deleteBlog = async (req, res) => {
       return res.status(500).json({ error: 'Failed to delete blog' });
     }
     
-    res.status(200).json({ 
-      message: 'Blog deleted successfully'
-    });
+    res.status(200).json({ message: 'Blog deleted successfully' });
   } catch (error) {
     console.error('Delete blog error:', error);
     res.status(500).json({ error: 'Server error deleting blog' });
   }
 };
 
-// Get blog categories
+// Get all blog categories
 const getBlogCategories = async (req, res) => {
   try {
-    const { data, error } = await supabaseAdmin
+    const { data: blogs, error } = await supabaseAdmin()
       .from('blogs')
       .select('category')
-      .order('category');
+      .not('category', 'is', null);
       
     if (error) {
-      console.error('Error fetching blog categories:', error);
-      return res.status(500).json({ error: 'Failed to fetch blog categories' });
+      console.error('Error fetching categories:', error);
+      return res.status(500).json({ error: 'Failed to fetch categories' });
     }
     
     // Extract unique categories
-    const categories = [...new Set(data.map(blog => blog.category))];
+    const categories = [...new Set(blogs.map(blog => blog.category))];
     
     res.status(200).json({ categories });
   } catch (error) {
-    console.error('Get blog categories error:', error);
-    res.status(500).json({ error: 'Server error fetching blog categories' });
+    console.error('Get categories error:', error);
+    res.status(500).json({ error: 'Server error fetching categories' });
   }
 };
 
-// Get blog tags
+// Get all blog tags
 const getBlogTags = async (req, res) => {
   try {
-    const { data, error } = await supabaseAdmin
+    const { data: blogs, error } = await supabaseAdmin()
       .from('blogs')
-      .select('tags');
+      .select('tags')
+      .not('tags', 'is', null);
       
     if (error) {
-      console.error('Error fetching blog tags:', error);
-      return res.status(500).json({ error: 'Failed to fetch blog tags' });
+      console.error('Error fetching tags:', error);
+      return res.status(500).json({ error: 'Failed to fetch tags' });
     }
     
-    // Extract and flatten all tags
-    const allTags = data.flatMap(blog => blog.tags || []);
-    // Extract unique tags
-    const tags = [...new Set(allTags)];
+    // Extract unique tags from all blogs
+    const allTags = blogs.reduce((tags, blog) => {
+      if (blog.tags && Array.isArray(blog.tags)) {
+        return [...tags, ...blog.tags];
+      }
+      return tags;
+    }, []);
     
-    res.status(200).json({ tags });
+    const uniqueTags = [...new Set(allTags)];
+    
+    res.status(200).json({ tags: uniqueTags });
   } catch (error) {
-    console.error('Get blog tags error:', error);
-    res.status(500).json({ error: 'Server error fetching blog tags' });
+    console.error('Get tags error:', error);
+    res.status(500).json({ error: 'Server error fetching tags' });
   }
 };
 
