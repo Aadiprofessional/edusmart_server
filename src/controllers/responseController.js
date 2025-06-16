@@ -7,7 +7,7 @@ const getResponses = async (req, res) => {
     const { page = 1, limit = 10, category, type, search, featured } = req.query;
     const offset = (page - 1) * limit;
     
-    let query = supabase
+    let query = supabase()
       .from('responses')
       .select('*', { count: 'exact' });
       
@@ -61,7 +61,7 @@ const getResponseById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { data: response, error } = await supabase
+    const { data: response, error } = await supabase()
       .from('responses')
       .select('*')
       .eq('id', id)
@@ -124,7 +124,7 @@ const createResponse = async (req, res) => {
     console.log('Insert data:', insertData);
     
     // Use supabaseAdmin to bypass RLS
-    const { data: response, error } = await supabaseAdmin
+    const { data: response, error } = await supabaseAdmin()
       .from('responses')
       .insert([insertData])
       .select()
@@ -140,7 +140,7 @@ const createResponse = async (req, res) => {
         // Remove created_by and try again
         const { created_by, ...insertDataWithoutCreatedBy } = insertData;
         
-        const { data: response2, error: error2 } = await supabaseAdmin
+        const { data: response2, error: error2 } = await supabaseAdmin()
           .from('responses')
           .insert([insertDataWithoutCreatedBy])
           .select()
@@ -207,7 +207,7 @@ const updateResponse = async (req, res) => {
     } = req.body;
     
     // First check if the response exists
-    const { data: existingResponse, error: fetchError } = await supabase
+    const { data: existingResponse, error: fetchError } = await supabase()
       .from('responses')
       .select('created_by')
       .eq('id', id)
@@ -218,7 +218,7 @@ const updateResponse = async (req, res) => {
     }
     
     // Update the response using admin client (admin can update any response)
-    const { data: updatedResponse, error } = await supabaseAdmin
+    const { data: updatedResponse, error } = await supabaseAdmin()
       .from('responses')
       .update({
         title,
@@ -260,7 +260,7 @@ const deleteResponse = async (req, res) => {
     const { uid } = req.body;
     
     // First check if the response exists
-    const { data: existingResponse, error: fetchError } = await supabase
+    const { data: existingResponse, error: fetchError } = await supabase()
       .from('responses')
       .select('created_by')
       .eq('id', id)
@@ -271,7 +271,7 @@ const deleteResponse = async (req, res) => {
     }
     
     // Delete the response using admin client (admin can delete any response)
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin()
       .from('responses')
       .delete()
       .eq('id', id);
@@ -293,7 +293,7 @@ const deleteResponse = async (req, res) => {
 // Get response categories
 const getResponseCategories = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase()
       .from('responses')
       .select('category')
       .order('category');
@@ -316,7 +316,7 @@ const getResponseCategories = async (req, res) => {
 // Get response types
 const getResponseTypes = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase()
       .from('responses')
       .select('type')
       .order('type');

@@ -7,7 +7,7 @@ const getCaseStudies = async (req, res) => {
     const { page = 1, limit = 10, category, outcome, country, field, search, featured } = req.query;
     const offset = (page - 1) * limit;
     
-    let query = supabase
+    let query = supabase()
       .from('case_studies')
       .select('*', { count: 'exact' })
       .eq('status', 'published'); // Only show published case studies
@@ -70,7 +70,7 @@ const getCaseStudyById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { data: caseStudy, error } = await supabase
+    const { data: caseStudy, error } = await supabase()
       .from('case_studies')
       .select('*')
       .eq('id', id)
@@ -83,7 +83,7 @@ const getCaseStudyById = async (req, res) => {
     }
     
     // Increment view count
-    await supabase
+    await supabase()
       .from('case_studies')
       .update({ views: caseStudy.views + 1 })
       .eq('id', id);
@@ -172,7 +172,7 @@ const createCaseStudy = async (req, res) => {
     console.log('Insert data:', insertData);
     
     // Use supabaseAdmin to bypass RLS
-    const { data: caseStudy, error } = await supabaseAdmin
+    const { data: caseStudy, error } = await supabaseAdmin()
       .from('case_studies')
       .insert([insertData])
       .select()
@@ -231,7 +231,7 @@ const updateCaseStudy = async (req, res) => {
     } = req.body;
     
     // First check if the case study exists
-    const { data: existingCaseStudy, error: fetchError } = await supabase
+    const { data: existingCaseStudy, error: fetchError } = await supabase()
       .from('case_studies')
       .select('created_by')
       .eq('id', id)
@@ -242,7 +242,7 @@ const updateCaseStudy = async (req, res) => {
     }
     
     // Update the case study using admin client (admin can update any case study)
-    const { data: updatedCaseStudy, error } = await supabaseAdmin
+    const { data: updatedCaseStudy, error } = await supabaseAdmin()
       .from('case_studies')
       .update({
         title,
@@ -300,7 +300,7 @@ const deleteCaseStudy = async (req, res) => {
     const { uid } = req.body;
     
     // First check if the case study exists
-    const { data: existingCaseStudy, error: fetchError } = await supabase
+    const { data: existingCaseStudy, error: fetchError } = await supabase()
       .from('case_studies')
       .select('created_by')
       .eq('id', id)
@@ -311,7 +311,7 @@ const deleteCaseStudy = async (req, res) => {
     }
     
     // Delete the case study using admin client (admin can delete any case study)
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin()
       .from('case_studies')
       .delete()
       .eq('id', id);
@@ -333,7 +333,7 @@ const deleteCaseStudy = async (req, res) => {
 // Get case study categories
 const getCaseStudyCategories = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase()
       .from('case_studies')
       .select('category')
       .eq('status', 'published')
@@ -357,7 +357,7 @@ const getCaseStudyCategories = async (req, res) => {
 // Get case study outcomes
 const getCaseStudyOutcomes = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase()
       .from('case_studies')
       .select('outcome')
       .eq('status', 'published')
@@ -381,7 +381,7 @@ const getCaseStudyOutcomes = async (req, res) => {
 // Get case study countries
 const getCaseStudyCountries = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase()
       .from('case_studies')
       .select('target_country')
       .eq('status', 'published')
@@ -406,7 +406,7 @@ const getCaseStudyCountries = async (req, res) => {
 // Get case study fields of study
 const getCaseStudyFields = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase()
       .from('case_studies')
       .select('field_of_study')
       .eq('status', 'published')
