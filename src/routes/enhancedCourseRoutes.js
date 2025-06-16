@@ -33,6 +33,7 @@ import {
   
   // Utilities
   getCourseCategories,
+  getCourseLevels,
   getCourseStatistics,
   
   // AI Video Summary
@@ -54,6 +55,11 @@ router.get('/courses/:id', getCourseById);
 
 // Get course categories
 router.get('/course-categories', getCourseCategories);
+router.get('/courses/categories', getCourseCategories);
+
+// Get course levels
+router.get('/course-levels', getCourseLevels);
+router.get('/courses/levels', getCourseLevels);
 
 // Get course reviews
 router.get('/courses/:courseId/reviews', getCourseReviews);

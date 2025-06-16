@@ -155,8 +155,7 @@ app.options('*', cors(corsOptions));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api', blogRoutes);
-app.use('/api', courseRoutes);
-app.use('/api/v2', enhancedCourseRoutes);
+app.use('/api', enhancedCourseRoutes);
 app.use('/api/case-studies', caseStudyRoutes);
 app.use('/api', responseRoutes);
 app.use('/api', scholarshipRoutes);

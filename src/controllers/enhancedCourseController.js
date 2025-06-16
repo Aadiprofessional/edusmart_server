@@ -1116,24 +1116,70 @@ const generateVideoSummary = async (req, res) => {
 // Get course categories
 const getCourseCategories = async (req, res) => {
   try {
+    // First try to get from course_categories table
     const { data: categories, error } = await supabase
       .from('course_categories')
       .select('*')
       .eq('is_active', true)
       .order('sort_order');
       
-    if (error) {
-      console.error('Error fetching categories:', error);
-      return res.status(500).json({ error: 'Failed to fetch categories' });
+    if (!error && categories && categories.length > 0) {
+      return res.status(200).json({
+        success: true,
+        data: { categories }
+      });
     }
+    
+    // Fallback: Extract unique categories from courses table (like basic controller)
+    console.log('Falling back to extracting categories from courses table');
+    const { data: coursesData, error: coursesError } = await supabase
+      .from('courses')
+      .select('category')
+      .eq('status', 'published')
+      .order('category');
+      
+    if (coursesError) {
+      console.error('Error fetching course categories:', coursesError);
+      return res.status(500).json({ error: 'Failed to fetch course categories' });
+    }
+    
+    // Extract unique categories
+    const uniqueCategories = [...new Set(coursesData.map(course => course.category).filter(Boolean))];
     
     res.status(200).json({
       success: true,
-      data: { categories }
+      data: { categories: uniqueCategories }
     });
   } catch (error) {
     console.error('Get categories error:', error);
     res.status(500).json({ error: 'Server error fetching categories' });
+  }
+};
+
+// Get course levels
+const getCourseLevels = async (req, res) => {
+  try {
+    const { data: coursesData, error } = await supabase
+      .from('courses')
+      .select('level')
+      .eq('status', 'published')
+      .order('level');
+      
+    if (error) {
+      console.error('Error fetching course levels:', error);
+      return res.status(500).json({ error: 'Failed to fetch course levels' });
+    }
+    
+    // Extract unique levels
+    const uniqueLevels = [...new Set(coursesData.map(course => course.level).filter(Boolean))];
+    
+    res.status(200).json({
+      success: true,
+      data: { levels: uniqueLevels }
+    });
+  } catch (error) {
+    console.error('Get levels error:', error);
+    res.status(500).json({ error: 'Server error fetching levels' });
   }
 };
 
@@ -1204,6 +1250,7 @@ export {
   
   // Utilities
   getCourseCategories,
+  getCourseLevels,
   getCourseStatistics,
   
   // AI Video Summary
