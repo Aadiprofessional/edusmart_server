@@ -466,7 +466,13 @@ const getCourseSections = async (req, res) => {
 // Create course section
 const createCourseSection = async (req, res) => {
   try {
-    const { courseId } = req.params;
+    // Get courseId from either URL params or request body
+    const courseId = req.params.courseId || req.body.course_id;
+    
+    if (!courseId) {
+      return res.status(400).json({ error: 'Course ID is required' });
+    }
+    
     const sectionData = {
       course_id: courseId,
       title: req.body.title,
@@ -558,7 +564,12 @@ const deleteCourseSection = async (req, res) => {
 // Create course lecture
 const createCourseLecture = async (req, res) => {
   try {
-    const { sectionId } = req.params;
+    // Get sectionId from either URL params or request body
+    const sectionId = req.params.sectionId || req.body.section_id;
+    
+    if (!sectionId) {
+      return res.status(400).json({ error: 'Section ID is required' });
+    }
     
     // Get section to get course_id
     const { data: section } = await supabaseAdmin()
@@ -1143,12 +1154,20 @@ const getCourseCategories = async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch course categories' });
     }
     
-    // Extract unique categories
+    // Extract unique categories and format them as objects
     const uniqueCategories = [...new Set(coursesData.map(course => course.category).filter(Boolean))];
+    const formattedCategories = uniqueCategories.map((categoryName, index) => ({
+      id: index.toString(),
+      name: categoryName,
+      slug: categoryName.toLowerCase().replace(/\s+/g, '-'),
+      description: `${categoryName} courses`,
+      icon: null,
+      color: null
+    }));
     
     res.status(200).json({
       success: true,
-      data: { categories: uniqueCategories }
+      data: { categories: formattedCategories }
     });
   } catch (error) {
     console.error('Get categories error:', error);

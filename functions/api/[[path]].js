@@ -387,8 +387,14 @@ export async function onRequest(context) {
       } else if (path.match(/^\/sections\/[^\/]+$/) && method === 'DELETE') {
         req.params.sectionId = path.split('/')[2];
         await deleteCourseSection(req, res);
+      } else if (path === '/sections' && method === 'POST') {
+        // Handle direct section creation (admin panel expects this route)
+        await createCourseSection(req, res);
       } else if (path.match(/^\/sections\/[^\/]+\/lectures$/) && method === 'POST') {
         req.params.sectionId = path.split('/')[2];
+        await createCourseLecture(req, res);
+      } else if (path === '/lectures' && method === 'POST') {
+        // Handle direct lecture creation (admin panel expects this route)
         await createCourseLecture(req, res);
       } else if (path.match(/^\/lectures\/[^\/]+$/) && method === 'PUT') {
         req.params.lectureId = path.split('/')[2];
