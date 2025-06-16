@@ -117,8 +117,8 @@ export async function onRequest(context) {
       }
     };
 
-    // Parse request body for POST/PUT/PATCH
-    if (['POST', 'PUT', 'PATCH'].includes(method)) {
+    // Parse request body for POST/PUT/PATCH/DELETE
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
       const body = await request.text();
       if (body) {
         try {
@@ -177,19 +177,28 @@ export async function onRequest(context) {
     // Routes that require authentication
     const protectedRoutes = [
       '/auth/profile',
-      '/user-profile',
-      '/blogs',
-      '/courses'
+      '/user-profile'
     ];
 
-    const requiresAuth = protectedRoutes.some(route => {
+    // Blog routes use UID-based admin verification, not JWT authentication
+    // Course routes also use UID-based admin verification for admin operations
+    const uidBasedAdminRoutes = ['/blogs', '/courses', '/scholarships', '/universities', '/responses', '/case-studies'];
+    
+    const requiresAuth = (protectedRoutes.some(route => {
       if (route === path) return true;
       if (path.startsWith(route + '/')) return true;
       return false;
-    }) && !['GET'].includes(method) || path === '/auth/profile';
+    }) && !['GET'].includes(method)) || path === '/auth/profile';
+
+    // Don't require JWT auth for UID-based admin routes
+    const isUidBasedRoute = uidBasedAdminRoutes.some(route => {
+      return path === route || path.startsWith(route + '/');
+    });
+    
+    const needsJwtAuth = requiresAuth && !isUidBasedRoute;
 
     // Authenticate if required
-    if (requiresAuth) {
+    if (needsJwtAuth) {
       const authResult = await authenticateRequest(req);
       if (!authResult.success) {
         return new Response(JSON.stringify({ error: authResult.error }), {
