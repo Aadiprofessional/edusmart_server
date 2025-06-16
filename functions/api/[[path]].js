@@ -5,7 +5,45 @@
 import { register, login, getProfile, logout, refreshToken } from '../../src/controllers/authController.js';
 import { getAllUsers, getUserById, updateUser, deleteUser } from '../../src/controllers/userController.js';
 import { getBlogs, getBlogById, createBlog, updateBlog, deleteBlog, getBlogCategories, getBlogTags } from '../../src/controllers/blogController.js';
-import { getCourses, getCourseById, createCourse, updateCourse, deleteCourse, getCourseCategories, getCourseLevels } from '../../src/controllers/courseController.js';
+import { 
+  // Course management
+  getCourses,
+  getCourseById,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  
+  // Section management
+  getCourseSections,
+  createCourseSection,
+  updateCourseSection,
+  deleteCourseSection,
+  
+  // Lecture management
+  createCourseLecture,
+  updateCourseLecture,
+  deleteCourseLecture,
+  
+  // Enrollment management
+  enrollInCourse,
+  getUserEnrollments,
+  
+  // Progress tracking
+  updateLectureProgress,
+  getCourseProgress,
+  
+  // Reviews
+  createCourseReview,
+  getCourseReviews,
+  
+  // Utilities
+  getCourseCategories,
+  getCourseLevels,
+  getCourseStatistics,
+  
+  // AI Video Summary
+  generateVideoSummary
+} from '../../src/controllers/enhancedCourseController.js';
 import { 
   getCaseStudies, 
   getCaseStudyById, 
@@ -289,7 +327,83 @@ export async function onRequest(context) {
         await getCourseCategories(req, res);
       } else if (path === '/courses/levels' && method === 'GET') {
         await getCourseLevels(req, res);
-      } else if (path.startsWith('/courses/') && method === 'GET') {
+      }
+      
+      // Specific course routes (must come before generic /courses/:id)
+      else if (path.match(/^\/courses\/[^\/]+\/enroll$/) && method === 'POST') {
+        req.params.courseId = path.split('/')[2];
+        await enrollInCourse(req, res);
+      } else if (path.match(/^\/courses\/[^\/]+\/sections$/) && method === 'GET') {
+        req.params.courseId = path.split('/')[2];
+        await getCourseSections(req, res);
+      } else if (path.match(/^\/courses\/[^\/]+\/sections$/) && method === 'POST') {
+        req.params.courseId = path.split('/')[2];
+        await createCourseSection(req, res);
+      } else if (path.match(/^\/courses\/[^\/]+\/reviews$/) && method === 'GET') {
+        req.params.courseId = path.split('/')[2];
+        await getCourseReviews(req, res);
+      } else if (path.match(/^\/courses\/[^\/]+\/reviews$/) && method === 'POST') {
+        req.params.courseId = path.split('/')[2];
+        await createCourseReview(req, res);
+      } else if (path.match(/^\/courses\/[^\/]+\/enrollment\/[^\/]+$/) && method === 'GET') {
+        const pathParts = path.split('/');
+        req.params.courseId = pathParts[2];
+        req.params.userId = pathParts[4];
+        // Simple enrollment check endpoint
+        const { supabaseAdmin } = await import('../../src/utils/supabase.js');
+        try {
+          const { data: enrollment, error } = await supabaseAdmin
+            .from('course_enrollments')
+            .select('*')
+            .eq('user_id', req.params.userId)
+            .eq('course_id', req.params.courseId)
+            .single();
+          
+          res.json({
+            success: true,
+            data: {
+              enrolled: !!enrollment,
+              enrollment: enrollment || null,
+              error: error?.message || null
+            }
+          });
+        } catch (error) {
+          res.status(500).json({ error: 'Server error checking enrollment' });
+        }
+      } else if (path.match(/^\/courses\/[^\/]+\/progress\/[^\/]+$/) && method === 'GET') {
+        const pathParts = path.split('/');
+        req.params.courseId = pathParts[2];
+        req.params.userId = pathParts[4];
+        await getCourseProgress(req, res);
+      } else if (path.match(/^\/courses\/[^\/]+\/progress$/) && method === 'POST') {
+        req.params.courseId = path.split('/')[2];
+        await updateLectureProgress(req, res);
+      } else if (path.match(/^\/users\/[^\/]+\/enrollments$/) && method === 'GET') {
+        req.params.userId = path.split('/')[2];
+        await getUserEnrollments(req, res);
+      } else if (path.match(/^\/sections\/[^\/]+$/) && method === 'PUT') {
+        req.params.sectionId = path.split('/')[2];
+        await updateCourseSection(req, res);
+      } else if (path.match(/^\/sections\/[^\/]+$/) && method === 'DELETE') {
+        req.params.sectionId = path.split('/')[2];
+        await deleteCourseSection(req, res);
+      } else if (path.match(/^\/sections\/[^\/]+\/lectures$/) && method === 'POST') {
+        req.params.sectionId = path.split('/')[2];
+        await createCourseLecture(req, res);
+      } else if (path.match(/^\/lectures\/[^\/]+$/) && method === 'PUT') {
+        req.params.lectureId = path.split('/')[2];
+        await updateCourseLecture(req, res);
+      } else if (path.match(/^\/lectures\/[^\/]+$/) && method === 'DELETE') {
+        req.params.lectureId = path.split('/')[2];
+        await deleteCourseLecture(req, res);
+      } else if (path === '/generate-video-summary' && method === 'POST') {
+        await generateVideoSummary(req, res);
+      } else if (path === '/admin/course-statistics' && method === 'GET') {
+        await getCourseStatistics(req, res);
+      }
+      
+      // Generic course routes (must come after specific routes)
+      else if (path.startsWith('/courses/') && method === 'GET') {
         req.params.id = path.split('/')[2];
         await getCourseById(req, res);
       } else if (path.startsWith('/courses/') && method === 'PUT') {

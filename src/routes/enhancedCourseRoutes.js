@@ -50,9 +50,6 @@ import { courseValidationRules } from '../middlewares/validators.js';
 // Get all courses with filtering and pagination
 router.get('/courses', getCourses);
 
-// Get course by ID with full details
-router.get('/courses/:id', getCourseById);
-
 // Get course categories
 router.get('/course-categories', getCourseCategories);
 router.get('/courses/categories', getCourseCategories);
@@ -61,41 +58,15 @@ router.get('/courses/categories', getCourseCategories);
 router.get('/course-levels', getCourseLevels);
 router.get('/courses/levels', getCourseLevels);
 
+// SPECIFIC COURSE ROUTES (must come before /courses/:id)
 // Get course reviews
 router.get('/courses/:courseId/reviews', getCourseReviews);
 
 // Get course sections for enrolled users (public access for enrolled users)
 router.get('/courses/:courseId/sections', getCourseSections);
 
-// =============================================
-// ADMIN ROUTES (Admin authentication required)
-// =============================================
-
-// Course management
-router.post('/courses', checkAdminByUid, createCourse);
-router.put('/courses/:id', checkAdminByUid, updateCourse);
-router.delete('/courses/:id', checkAdminByUid, deleteCourse);
-
-// Course statistics (admin dashboard)
-router.get('/admin/course-statistics', checkAdminByUid, getCourseStatistics);
-
-// Section management (admin only for create/update/delete)
-router.post('/courses/:courseId/sections', checkAdminByUid, createCourseSection);
-router.put('/sections/:sectionId', checkAdminByUid, updateCourseSection);
-router.delete('/sections/:sectionId', checkAdminByUid, deleteCourseSection);
-
-// Lecture management
-router.post('/sections/:sectionId/lectures', checkAdminByUid, createCourseLecture);
-router.put('/lectures/:lectureId', checkAdminByUid, updateCourseLecture);
-router.delete('/lectures/:lectureId', checkAdminByUid, deleteCourseLecture);
-
-// =============================================
-// USER ROUTES (User authentication required)
-// =============================================
-
 // Enrollment management
 router.post('/courses/:courseId/enroll', enrollInCourse);
-router.get('/users/:userId/enrollments', getUserEnrollments);
 
 // Check enrollment status (for debugging)
 router.get('/courses/:courseId/enrollment/:userId', async (req, res) => {
@@ -129,6 +100,34 @@ router.get('/courses/:courseId/progress/:userId', getCourseProgress);
 // Course reviews
 router.post('/courses/:courseId/reviews', createCourseReview);
 
+// Section management (admin only for create/update/delete)
+router.post('/courses/:courseId/sections', checkAdminByUid, createCourseSection);
+
+// GENERIC COURSE ROUTE (must come after specific routes)
+// Get course by ID with full details
+router.get('/courses/:id', getCourseById);
+
+// =============================================
+// ADMIN ROUTES (Admin authentication required)
+// =============================================
+
+// Course management
+router.post('/courses', checkAdminByUid, createCourse);
+router.put('/courses/:id', checkAdminByUid, updateCourse);
+router.delete('/courses/:id', checkAdminByUid, deleteCourse);
+
+// Course statistics (admin dashboard)
+router.get('/admin/course-statistics', checkAdminByUid, getCourseStatistics);
+
+// Section management (admin only for update/delete)
+router.put('/sections/:sectionId', checkAdminByUid, updateCourseSection);
+router.delete('/sections/:sectionId', checkAdminByUid, deleteCourseSection);
+
+// Lecture management
+router.post('/sections/:sectionId/lectures', checkAdminByUid, createCourseLecture);
+router.put('/lectures/:lectureId', checkAdminByUid, updateCourseLecture);
+router.delete('/lectures/:lectureId', checkAdminByUid, deleteCourseLecture);
+
 // =============================================
 // PROTECTED COURSE CONTENT ROUTES
 // =============================================
@@ -138,5 +137,12 @@ router.get('/enrolled/courses/:courseId/sections', getCourseSections);
 
 // AI Video Summary Generation
 router.post('/generate-video-summary', generateVideoSummary);
+
+// =============================================
+// USER ROUTES (User authentication required)
+// =============================================
+
+// User enrollments
+router.get('/users/:userId/enrollments', getUserEnrollments);
 
 export default router; 
