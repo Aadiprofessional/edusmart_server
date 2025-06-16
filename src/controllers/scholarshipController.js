@@ -4,10 +4,10 @@ import { v4 as uuidv4 } from 'uuid';
 // Get all scholarships with pagination and filtering
 const getScholarships = async (req, res) => {
   try {
-    const { page = 1, limit = 10, country, minAmount, search } = req.query;
+    const { page = 1, limit = 10, country, university, search } = req.query;
     const offset = (page - 1) * limit;
     
-    let query = supabase
+    let query = supabase()
       .from('scholarships')
       .select('*', { count: 'exact' });
       
@@ -16,8 +16,8 @@ const getScholarships = async (req, res) => {
       query = query.eq('country', country);
     }
     
-    if (minAmount) {
-      query = query.gte('amount', minAmount);
+    if (university) {
+      query = query.eq('university', university);
     }
     
     if (search) {
@@ -57,7 +57,7 @@ const getScholarshipById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { data: scholarship, error } = await supabase
+    const { data: scholarship, error } = await supabase()
       .from('scholarships')
       .select('*')
       .eq('id', id)
@@ -96,7 +96,7 @@ const createScholarship = async (req, res) => {
     const createdBy = uid;
     
     // Use admin client to bypass RLS for admin operations
-    const { data: scholarship, error } = await supabaseAdmin
+    const { data: scholarship, error } = await supabaseAdmin()
       .from('scholarships')
       .insert([
         {
@@ -153,7 +153,7 @@ const updateScholarship = async (req, res) => {
     } = req.body;
     
     // First check if the scholarship exists
-    const { data: existingScholarship, error: fetchError } = await supabase
+    const { data: existingScholarship, error: fetchError } = await supabase()
       .from('scholarships')
       .select('created_by')
       .eq('id', id)
@@ -164,7 +164,7 @@ const updateScholarship = async (req, res) => {
     }
     
     // Update the scholarship using admin client (admin can update any scholarship)
-    const { data: updatedScholarship, error } = await supabaseAdmin
+    const { data: updatedScholarship, error } = await supabaseAdmin()
       .from('scholarships')
       .update({
         title,
@@ -205,7 +205,7 @@ const deleteScholarship = async (req, res) => {
     const { uid } = req.body;
     
     // First check if the scholarship exists
-    const { data: existingScholarship, error: fetchError } = await supabase
+    const { data: existingScholarship, error: fetchError } = await supabase()
       .from('scholarships')
       .select('created_by')
       .eq('id', id)
@@ -216,7 +216,7 @@ const deleteScholarship = async (req, res) => {
     }
     
     // Delete the scholarship using admin client (admin can delete any scholarship)
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin()
       .from('scholarships')
       .delete()
       .eq('id', id);
@@ -238,7 +238,7 @@ const deleteScholarship = async (req, res) => {
 // Get scholarship countries
 const getScholarshipCountries = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase()
       .from('scholarships')
       .select('country')
       .order('country');
@@ -261,7 +261,7 @@ const getScholarshipCountries = async (req, res) => {
 // Get scholarship universities
 const getScholarshipUniversities = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase()
       .from('scholarships')
       .select('university')
       .order('university');

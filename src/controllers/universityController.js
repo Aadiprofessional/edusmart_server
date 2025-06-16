@@ -14,7 +14,7 @@ const generateUniqueSlug = async (name) => {
 
   // Check if slug exists and generate unique one
   while (true) {
-    const { data: existing } = await supabase
+    const { data: existing } = await supabase()
       .from('universities')
       .select('id')
       .eq('slug', slug)
@@ -55,7 +55,7 @@ const getAllUniversities = async (req, res) => {
     
     const offset = (page - 1) * limit;
     
-    let query = supabase
+    let query = supabase()
       .from('universities')
       .select('*', { count: 'exact' });
       
@@ -166,7 +166,7 @@ const getUniversityById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { data: university, error } = await supabase
+    const { data: university, error } = await supabase()
       .from('universities')
       .select('*')
       .eq('id', id)
@@ -251,7 +251,7 @@ const createUniversity = async (req, res) => {
     const slug = await generateUniqueSlug(name);
 
     // Use admin client to bypass RLS for admin operations
-    const { data: university, error } = await supabaseAdmin
+    const { data: university, error } = await supabaseAdmin()
       .from('universities')
       .insert([
         {
@@ -398,7 +398,7 @@ const updateUniversity = async (req, res) => {
     } = req.body;
 
     // First check if the university exists
-    const { data: existingUniversity, error: fetchError } = await supabase
+    const { data: existingUniversity, error: fetchError } = await supabase()
       .from('universities')
       .select('created_by, slug, name')
       .eq('id', id)
@@ -415,7 +415,7 @@ const updateUniversity = async (req, res) => {
     }
 
     // Update the university using admin client (admin can update any university)
-    const { data: updatedUniversity, error } = await supabaseAdmin
+    const { data: updatedUniversity, error } = await supabaseAdmin()
       .from('universities')
       .update({
         name,
@@ -500,7 +500,7 @@ const deleteUniversity = async (req, res) => {
     const { uid } = req.body;
 
     // First check if the university exists
-    const { data: existingUniversity, error: fetchError } = await supabase
+    const { data: existingUniversity, error: fetchError } = await supabase()
       .from('universities')
       .select('created_by')
       .eq('id', id)
@@ -511,7 +511,7 @@ const deleteUniversity = async (req, res) => {
     }
 
     // Delete the university using admin client (admin can delete any university)
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin()
       .from('universities')
       .delete()
       .eq('id', id);
@@ -535,7 +535,7 @@ const getUniversitiesByCountry = async (req, res) => {
   try {
     const { country } = req.params;
 
-    const { data: universities, error } = await supabase
+    const { data: universities, error } = await supabase()
       .from('universities')
       .select('*')
       .eq('country', country)
@@ -559,7 +559,7 @@ const searchUniversities = async (req, res) => {
     const { query } = req.params;
     const { country, minRanking, maxTuition } = req.query;
 
-    let searchQuery = supabase
+    let searchQuery = supabase()
       .from('universities')
       .select('*')
       .or(`name.ilike.%${query}%,description.ilike.%${query}%,city.ilike.%${query}%`);
@@ -595,7 +595,7 @@ const searchUniversities = async (req, res) => {
 // Get university countries
 const getUniversityCountries = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase()
       .from('universities')
       .select('country')
       .order('country');
