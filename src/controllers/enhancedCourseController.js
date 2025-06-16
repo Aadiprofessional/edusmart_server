@@ -25,7 +25,7 @@ const getCourses = async (req, res) => {
     
     const offset = (page - 1) * limit;
     
-    let query = supabase
+    let query = supabase()
       .from('courses')
       .select('*', { count: 'exact' })
       .eq('status', 'published');
@@ -107,7 +107,7 @@ const getCourseById = async (req, res) => {
     const userId = req.user?.id; // From auth middleware if available
     
     // Get course with related data
-    const { data: course, error } = await supabase
+    const { data: course, error } = await supabase()
       .from('courses')
       .select(`
         *,
@@ -141,7 +141,7 @@ const getCourseById = async (req, res) => {
     // Check if user is enrolled (if authenticated)
     let enrollment = null;
     if (userId) {
-      const { data: enrollmentData } = await supabase
+      const { data: enrollmentData } = await supabase()
         .from('course_enrollments')
         .select('*')
         .eq('user_id', userId)
@@ -153,7 +153,7 @@ const getCourseById = async (req, res) => {
     }
     
     // Get recent reviews
-    const { data: reviews } = await supabase
+    const { data: reviews } = await supabase()
       .from('course_reviews')
       .select(`
         *,
@@ -223,7 +223,7 @@ const createCourse = async (req, res) => {
       created_by: uid
     };
     
-    const { data: course, error } = await supabaseAdmin
+    const { data: course, error } = await supabaseAdmin()
       .from('courses')
       .insert([courseData])
       .select()
@@ -253,7 +253,7 @@ const updateCourse = async (req, res) => {
     delete updateData.uid; // Remove uid from update data
     updateData.updated_at = new Date();
     
-    const { data: course, error } = await supabaseAdmin
+    const { data: course, error } = await supabaseAdmin()
       .from('courses')
       .update(updateData)
       .eq('id', id)
@@ -281,7 +281,7 @@ const deleteCourse = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin()
       .from('courses')
       .delete()
       .eq('id', id);
@@ -320,7 +320,7 @@ const getCourseSections = async (req, res) => {
       console.log('UID provided, checking access...');
       
       // Check if user is admin
-      const { data: profile, error: profileError } = await supabaseAdmin
+      const { data: profile, error: profileError } = await supabaseAdmin()
         .from('profiles')
         .select('role')
         .eq('id', uid)
@@ -340,7 +340,7 @@ const getCourseSections = async (req, res) => {
       if (!isAdmin) {
         console.log('User is not admin, checking enrollment...');
         
-        const { data: enrollment, error: enrollmentError } = await supabaseAdmin
+        const { data: enrollment, error: enrollmentError } = await supabaseAdmin()
           .from('course_enrollments')
           .select('id, status, user_id, course_id, enrolled_at')
           .eq('user_id', uid)
@@ -360,7 +360,7 @@ const getCourseSections = async (req, res) => {
           console.log('❌ ACCESS DENIED: User not enrolled and not admin');
           
           // Check if there's any enrollment record (regardless of status)
-          const { data: anyEnrollment } = await supabaseAdmin
+          const { data: anyEnrollment } = await supabaseAdmin()
             .from('course_enrollments')
             .select('id, status, user_id, course_id, enrolled_at')
             .eq('user_id', uid)
@@ -394,7 +394,7 @@ const getCourseSections = async (req, res) => {
     console.log('Fetching course sections...');
     
     // Get course details first
-    const { data: course, error: courseError } = await supabaseAdmin
+    const { data: course, error: courseError } = await supabaseAdmin()
       .from('courses')
       .select('id, title, instructor_name, total_sections, total_lectures')
       .eq('id', courseId)
@@ -406,7 +406,7 @@ const getCourseSections = async (req, res) => {
     }
     
     // Get sections with lectures
-    const { data: sections, error } = await supabaseAdmin
+    const { data: sections, error } = await supabaseAdmin()
       .from('course_sections')
       .select(`
         *,
@@ -436,7 +436,7 @@ const getCourseSections = async (req, res) => {
     // Get user progress if UID is provided
     let progress = [];
     if (uid) {
-      const { data: progressData } = await supabaseAdmin
+      const { data: progressData } = await supabaseAdmin()
         .from('lecture_progress')
         .select('lecture_id, progress_percentage, completed, last_watched_position')
         .eq('user_id', uid)
@@ -474,7 +474,7 @@ const createCourseSection = async (req, res) => {
       section_order: req.body.section_order
     };
     
-    const { data: section, error } = await supabaseAdmin
+    const { data: section, error } = await supabaseAdmin()
       .from('course_sections')
       .insert([sectionData])
       .select()
@@ -503,7 +503,7 @@ const updateCourseSection = async (req, res) => {
     const { uid, ...updateData } = req.body; // Extract uid and exclude it from update data
     updateData.updated_at = new Date();
     
-    const { data: section, error } = await supabaseAdmin
+    const { data: section, error } = await supabaseAdmin()
       .from('course_sections')
       .update(updateData)
       .eq('id', sectionId)
@@ -531,7 +531,7 @@ const deleteCourseSection = async (req, res) => {
   try {
     const { sectionId } = req.params;
     
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin()
       .from('course_sections')
       .delete()
       .eq('id', sectionId);
@@ -561,7 +561,7 @@ const createCourseLecture = async (req, res) => {
     const { sectionId } = req.params;
     
     // Get section to get course_id
-    const { data: section } = await supabaseAdmin
+    const { data: section } = await supabaseAdmin()
       .from('course_sections')
       .select('course_id')
       .eq('id', sectionId)
@@ -587,7 +587,7 @@ const createCourseLecture = async (req, res) => {
       summary: req.body.summary || null
     };
     
-    const { data: lecture, error } = await supabaseAdmin
+    const { data: lecture, error } = await supabaseAdmin()
       .from('course_lectures')
       .insert([lectureData])
       .select()
@@ -616,7 +616,7 @@ const updateCourseLecture = async (req, res) => {
     const { uid, ...updateData } = req.body; // Extract uid and exclude it from update data
     updateData.updated_at = new Date();
     
-    const { data: lecture, error } = await supabaseAdmin
+    const { data: lecture, error } = await supabaseAdmin()
       .from('course_lectures')
       .update(updateData)
       .eq('id', lectureId)
@@ -644,7 +644,7 @@ const deleteCourseLecture = async (req, res) => {
   try {
     const { lectureId } = req.params;
     
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin()
       .from('course_lectures')
       .delete()
       .eq('id', lectureId);
@@ -686,7 +686,7 @@ const enrollInCourse = async (req, res) => {
     }
     
     // Check if course exists
-    const { data: course, error: courseError } = await supabaseAdmin
+    const { data: course, error: courseError } = await supabaseAdmin()
       .from('courses')
       .select('id, title, price, total_lectures')
       .eq('id', courseId)
@@ -700,7 +700,7 @@ const enrollInCourse = async (req, res) => {
     console.log('✅ Course found:', course.title);
     
     // Check if already enrolled
-    const { data: existingEnrollment, error: checkError } = await supabaseAdmin
+    const { data: existingEnrollment, error: checkError } = await supabaseAdmin()
       .from('course_enrollments')
       .select('*')
       .eq('user_id', userId)
@@ -735,7 +735,7 @@ const enrollInCourse = async (req, res) => {
     
     console.log('Creating enrollment with data:', enrollmentData);
     
-    const { data: enrollment, error } = await supabaseAdmin
+    const { data: enrollment, error } = await supabaseAdmin()
       .from('course_enrollments')
       .insert([enrollmentData])
       .select()
@@ -768,7 +768,7 @@ const getUserEnrollments = async (req, res) => {
   try {
     const { userId } = req.params;
     
-    const { data: enrollments, error } = await supabase
+    const { data: enrollments, error } = await supabase()
       .from('course_enrollments')
       .select(`
         *,
@@ -812,7 +812,7 @@ const updateLectureProgress = async (req, res) => {
     const { userId, watchTimeSeconds, completed } = req.body;
     
     // Get lecture details
-    const { data: lecture } = await supabase
+    const { data: lecture } = await supabase()
       .from('course_lectures')
       .select('course_id, video_duration_seconds')
       .eq('id', lectureId)
@@ -838,7 +838,7 @@ const updateLectureProgress = async (req, res) => {
       completed_at: (completed || completionPercentage >= 80) ? new Date() : null
     };
     
-    const { data: progress, error } = await supabaseAdmin
+    const { data: progress, error } = await supabaseAdmin()
       .from('lecture_progress')
       .upsert([progressData], { onConflict: 'user_id,lecture_id' })
       .select()
@@ -867,7 +867,7 @@ const updateLectureProgress = async (req, res) => {
 const updateCourseProgress = async (userId, courseId) => {
   try {
     // Get total lectures and completed lectures
-    const { data: stats } = await supabase
+    const { data: stats } = await supabase()
       .from('lecture_progress')
       .select('completed')
       .eq('user_id', userId)
@@ -881,7 +881,7 @@ const updateCourseProgress = async (userId, courseId) => {
       : 0;
     
     // Update enrollment progress
-    await supabaseAdmin
+    await supabaseAdmin()
       .from('course_enrollments')
       .update({
         progress_percentage: progressPercentage,
@@ -902,7 +902,7 @@ const getCourseProgress = async (req, res) => {
   try {
     const { courseId, userId } = req.params;
     
-    const { data: progress, error } = await supabase
+    const { data: progress, error } = await supabase()
       .from('lecture_progress')
       .select(`
         *,
@@ -944,7 +944,7 @@ const createCourseReview = async (req, res) => {
     const { userId, rating, title, comment } = req.body;
     
     // Check if user is enrolled
-    const { data: enrollment } = await supabase
+    const { data: enrollment } = await supabase()
       .from('course_enrollments')
       .select('id')
       .eq('user_id', userId)
@@ -964,7 +964,7 @@ const createCourseReview = async (req, res) => {
       comment
     };
     
-    const { data: review, error } = await supabaseAdmin
+    const { data: review, error } = await supabaseAdmin()
       .from('course_reviews')
       .upsert([reviewData], { onConflict: 'user_id,course_id' })
       .select()
@@ -993,7 +993,7 @@ const getCourseReviews = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
     
-    const { data: reviews, error, count } = await supabase
+    const { data: reviews, error, count } = await supabase()
       .from('course_reviews')
       .select(`
         *,
@@ -1117,7 +1117,7 @@ const generateVideoSummary = async (req, res) => {
 const getCourseCategories = async (req, res) => {
   try {
     // First try to get from course_categories table
-    const { data: categories, error } = await supabase
+    const { data: categories, error } = await supabase()
       .from('course_categories')
       .select('*')
       .eq('is_active', true)
@@ -1132,7 +1132,7 @@ const getCourseCategories = async (req, res) => {
     
     // Fallback: Extract unique categories from courses table (like basic controller)
     console.log('Falling back to extracting categories from courses table');
-    const { data: coursesData, error: coursesError } = await supabase
+    const { data: coursesData, error: coursesError } = await supabase()
       .from('courses')
       .select('category')
       .eq('status', 'published')
@@ -1159,7 +1159,7 @@ const getCourseCategories = async (req, res) => {
 // Get course levels
 const getCourseLevels = async (req, res) => {
   try {
-    const { data: coursesData, error } = await supabase
+    const { data: coursesData, error } = await supabase()
       .from('courses')
       .select('level')
       .eq('status', 'published')
@@ -1186,12 +1186,12 @@ const getCourseLevels = async (req, res) => {
 // Get course statistics (for admin dashboard)
 const getCourseStatistics = async (req, res) => {
   try {
-    const { data: stats } = await supabase
+    const { data: stats } = await supabase()
       .from('courses')
       .select('status, featured, bestseller')
       .eq('status', 'published');
     
-    const { data: enrollmentStats } = await supabase
+    const { data: enrollmentStats } = await supabase()
       .from('course_enrollments')
       .select('status, price_paid');
     
