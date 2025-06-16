@@ -131,14 +131,14 @@ const createBlog = async (req, res) => {
     
     // Prepare blog data without featured field to avoid schema issues
     const blogData = {
-      id: uuidv4(),
-      title,
-      content,
-      excerpt,
-      category,
-      tags,
-      image,
-      author_id: authorId,
+          id: uuidv4(),
+          title,
+          content,
+          excerpt,
+          category,
+          tags,
+          image,
+          author_id: authorId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -198,12 +198,12 @@ const updateBlog = async (req, res) => {
     
     // Prepare update data without featured field
     const updateData = {
-      title,
-      content,
-      excerpt,
-      category,
-      tags,
-      image,
+        title,
+        content,
+        excerpt,
+        category,
+        tags,
+        image,
       updated_at: new Date().toISOString()
     };
     
