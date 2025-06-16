@@ -10,7 +10,7 @@ const getCourses = async (req, res) => {
     let query = supabase()
       .from('courses')
       .select('*', { count: 'exact' })
-      .eq('status', 'active'); // Only show active courses
+      .eq('status', 'published'); // Only show published courses
       
     // Apply filters if provided
     if (category) {
