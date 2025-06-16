@@ -244,6 +244,7 @@ const deleteBlog = async (req, res) => {
       .single();
       
     if (fetchError || !existingBlog) {
+      console.error('Blog not found or fetch error:', fetchError);
       return res.status(404).json({ error: 'Blog not found' });
     }
     
@@ -255,13 +256,19 @@ const deleteBlog = async (req, res) => {
       
     if (error) {
       console.error('Error deleting blog:', error);
-      return res.status(500).json({ error: 'Failed to delete blog' });
+      return res.status(500).json({ 
+        error: 'Failed to delete blog',
+        details: error.message 
+      });
     }
     
     res.status(200).json({ message: 'Blog deleted successfully' });
   } catch (error) {
     console.error('Delete blog error:', error);
-    res.status(500).json({ error: 'Server error deleting blog' });
+    res.status(500).json({ 
+      error: 'Server error deleting blog',
+      details: error.message 
+    });
   }
 };
 
