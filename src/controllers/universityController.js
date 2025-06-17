@@ -585,7 +585,7 @@ const searchUniversities = async (req, res) => {
       return res.status(500).json({ error: 'Failed to search universities' });
     }
 
-    res.status(200).json({ universities });
+    res.status(200).json({ universities: universities || [] });
   } catch (error) {
     console.error('Search universities error:', error);
     res.status(500).json({ error: 'Server error searching universities' });

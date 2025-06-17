@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 // Test configuration
 const LOCALHOST_BASE_URL = 'http://localhost:8000/api';
@@ -63,7 +63,7 @@ const TEST_CASE_STUDY = {
 async function loginAdmin(baseUrl) {
   try {
     const response = await axios.post(`${baseUrl}/auth/login`, ADMIN_CREDENTIALS);
-    return response.data.token;
+    return response.data.session.access_token;
   } catch (error) {
     console.error(`❌ Admin login failed for ${baseUrl}:`, error.response?.data || error.message);
     return null;
@@ -383,8 +383,8 @@ async function testEnvironment(baseUrl, environmentName) {
   }
   console.log('✅ Admin authentication successful');
 
-  // Get admin UID (hardcoded for testing)
-  const adminUid = 'bca2f806-29c5-4be9-bc2d-a484671546cd';
+  // Get admin UID (from the login response)
+  const adminUid = '5f21c714-a255-4bab-864e-a36c63466a95';
 
   // Test all APIs
   console.log(`\n📚 Testing University APIs for ${environmentName}...`);

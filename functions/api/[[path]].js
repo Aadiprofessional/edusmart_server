@@ -470,6 +470,8 @@ export async function onRequest(context) {
       } else if (path === '/universities' && method === 'POST') {
         await createUniversity(req, res);
       } else if (path === '/universities/search' && method === 'GET') {
+        // Extract query from query parameters and set as path parameter
+        req.params.query = req.query.query || 'university';
         await searchUniversities(req, res);
       } else if (path === '/universities/countries' && method === 'GET') {
         await getUniversityCountries(req, res);
