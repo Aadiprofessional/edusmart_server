@@ -276,14 +276,22 @@ export async function onRequest(context) {
       '/user-profile',
       '/user/profile',
       '/subscriptions/status',
+      '/subscriptions/buy',
+      '/subscriptions/buy-addon',
       '/subscriptions/purchase',
       '/subscriptions/purchase-addon',
       '/subscriptions/use-response',
+      '/subscriptions/responses',
       '/subscriptions/response-history',
+      '/subscriptions/transactions',
       '/subscriptions/transaction-history',
       '/subscriptions/usage-logs',
+      '/subscriptions/admin/all',
       '/subscriptions/all',
-      '/subscriptions/refresh-responses'
+      '/subscriptions/admin/refresh-responses',
+      '/subscriptions/refresh-responses',
+      '/generate-video-summary',
+      '/v2/generate-video-summary'
     ];
 
     // Blog routes use UID-based admin verification, not JWT authentication
@@ -294,7 +302,16 @@ export async function onRequest(context) {
       if (route === path) return true;
       if (path.startsWith(route + '/')) return true;
       return false;
-    }) || path === '/auth/profile';
+    }) || path === '/auth/profile' || 
+    // Course routes that require user authentication
+    (path.match(/^\/courses\/[^\/]+\/enroll$/) && method === 'POST') ||
+    (path.match(/^\/courses\/[^\/]+\/progress$/) && method === 'POST') ||
+    (path.match(/^\/courses\/[^\/]+\/reviews$/) && method === 'POST') ||
+    (path.match(/^\/v2\/courses\/[^\/]+\/enroll$/) && method === 'POST') ||
+    (path.match(/^\/v2\/courses\/[^\/]+\/progress$/) && method === 'POST') ||
+    (path.match(/^\/v2\/courses\/[^\/]+\/reviews$/) && method === 'POST') ||
+    (path.match(/^\/users\/[^\/]+\/enrollments$/) && method === 'GET') ||
+    (path.match(/^\/v2\/users\/[^\/]+\/enrollments$/) && method === 'GET');
 
     // Don't require JWT auth for UID-based admin routes
     const isUidBasedRoute = uidBasedAdminRoutes.some(route => {
