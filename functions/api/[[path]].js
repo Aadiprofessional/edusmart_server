@@ -93,16 +93,15 @@ import {
 import {
   getSubscriptionPlans,
   getAddonPlans,
-  getUserSubscriptionStatus,
-  purchaseSubscription,
-  purchaseAddon,
+  getUserSubscription,
+  buySubscription,
+  buyAddon,
   useResponse,
   getResponseHistory,
   getTransactionHistory,
   getUsageLogs,
-  cancelSubscription,
-  renewSubscription,
-  getSubscriptionAnalytics
+  getAllSubscriptions,
+  refreshResponses
 } from '../../src/controllers/subscriptionController.js';
 import applicationController from '../../src/controllers/applicationController.js';
 
@@ -237,9 +236,8 @@ export async function onRequest(context) {
       '/subscriptions/response-history',
       '/subscriptions/transaction-history',
       '/subscriptions/usage-logs',
-      '/subscriptions/cancel',
-      '/subscriptions/renew',
-      '/subscriptions/analytics'
+      '/subscriptions/all',
+      '/subscriptions/refresh-responses'
     ];
 
     // Blog routes use UID-based admin verification, not JWT authentication
@@ -554,11 +552,11 @@ export async function onRequest(context) {
       } else if (path === '/subscriptions/addons' && method === 'GET') {
         await getAddonPlans(req, res);
       } else if (path === '/subscriptions/status' && method === 'GET') {
-        await getUserSubscriptionStatus(req, res);
+        await getUserSubscription(req, res);
       } else if (path === '/subscriptions/purchase' && method === 'POST') {
-        await purchaseSubscription(req, res);
+        await buySubscription(req, res);
       } else if (path === '/subscriptions/purchase-addon' && method === 'POST') {
-        await purchaseAddon(req, res);
+        await buyAddon(req, res);
       } else if (path === '/subscriptions/use-response' && method === 'POST') {
         await useResponse(req, res);
       } else if (path === '/subscriptions/response-history' && method === 'GET') {
@@ -567,12 +565,10 @@ export async function onRequest(context) {
         await getTransactionHistory(req, res);
       } else if (path === '/subscriptions/usage-logs' && method === 'GET') {
         await getUsageLogs(req, res);
-      } else if (path === '/subscriptions/cancel' && method === 'POST') {
-        await cancelSubscription(req, res);
-      } else if (path === '/subscriptions/renew' && method === 'POST') {
-        await renewSubscription(req, res);
-      } else if (path === '/subscriptions/analytics' && method === 'GET') {
-        await getSubscriptionAnalytics(req, res);
+      } else if (path === '/subscriptions/all' && method === 'GET') {
+        await getAllSubscriptions(req, res);
+      } else if (path === '/subscriptions/refresh-responses' && method === 'POST') {
+        await refreshResponses(req, res);
       }
       
       // Default route
