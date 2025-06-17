@@ -16,6 +16,7 @@ const userRoutes = require('./routes/userRoutes');
 const userProfileRoutes = require('./routes/userProfileRoutes');
 const universityRoutes = require('./routes/universityRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
 
 // Initialize app
 const app = express();
@@ -162,6 +163,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/user', userProfileRoutes);
 app.use('/api/universities', universityRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -180,7 +182,8 @@ app.get('/', (req, res) => {
       users: '/api/users',
       userProfile: '/api/user',
       universities: '/api/universities',
-      uploads: '/api/uploads'
+      uploads: '/api/uploads',
+      subscriptions: '/api/subscriptions'
     }
   });
 });

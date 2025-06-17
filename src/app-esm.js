@@ -19,6 +19,7 @@ import userRoutes from './routes/userRoutes.js';
 import userProfileRoutes from './routes/userProfileRoutes.js';
 import universityRoutes from './routes/universityRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import subscriptionRoutes from './routes/subscriptionRoutes.js';
 
 // Initialize app
 const app = express();
@@ -155,7 +156,8 @@ app.options('*', cors(corsOptions));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api', blogRoutes);
-app.use('/api', enhancedCourseRoutes);
+app.use('/api', courseRoutes);
+app.use('/api/v2', enhancedCourseRoutes);
 app.use('/api/case-studies', caseStudyRoutes);
 app.use('/api', responseRoutes);
 app.use('/api', scholarshipRoutes);
@@ -163,6 +165,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/user', userProfileRoutes);
 app.use('/api/universities', universityRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -182,7 +185,8 @@ app.get('/', (req, res) => {
       users: '/api/users',
       userProfile: '/api/user',
       universities: '/api/universities',
-      uploads: '/api/uploads'
+      uploads: '/api/uploads',
+      subscriptions: '/api/subscriptions'
     }
   });
 });
