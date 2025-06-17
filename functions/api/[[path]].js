@@ -118,7 +118,9 @@ async function authenticateRequest(req) {
   const token = authHeader.split(' ')[1];
   
   try {
-    const { data: { user }, error } = await supabase().auth.getUser(token);
+    // Import supabaseAdmin to use service role key for JWT verification
+    const { supabaseAdmin } = await import('../../src/utils/supabase.js');
+    const { data: { user }, error } = await supabaseAdmin().auth.getUser(token);
     
     if (error || !user) {
       return { success: false, error: 'Invalid token' };
@@ -126,6 +128,7 @@ async function authenticateRequest(req) {
     
     return { success: true, user };
   } catch (error) {
+    console.error('Token verification error:', error);
     return { success: false, error: 'Token verification failed' };
   }
 }
@@ -244,11 +247,11 @@ export async function onRequest(context) {
     // Course routes also use UID-based admin verification for admin operations
     const uidBasedAdminRoutes = ['/blogs', '/courses', '/scholarships', '/universities', '/responses', '/case-studies'];
     
-    const requiresAuth = (protectedRoutes.some(route => {
+    const requiresAuth = protectedRoutes.some(route => {
       if (route === path) return true;
       if (path.startsWith(route + '/')) return true;
       return false;
-    }) && !['GET'].includes(method)) || path === '/auth/profile';
+    }) || path === '/auth/profile';
 
     // Don't require JWT auth for UID-based admin routes
     const isUidBasedRoute = uidBasedAdminRoutes.some(route => {

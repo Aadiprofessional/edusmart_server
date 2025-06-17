@@ -49,7 +49,7 @@ LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/auth/login" \
 echo "Login response: $LOGIN_RESPONSE"
 
 # Extract token
-TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.token // .data.token // empty')
+TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.session.access_token // .token // .data.token // empty')
 
 if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
     echo -e "${RED}❌ Failed to get authentication token${NC}"
