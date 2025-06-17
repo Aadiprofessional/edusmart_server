@@ -820,21 +820,39 @@ export async function onRequest(context) {
         await getAddonPlans(req, res);
       } else if (path === '/subscriptions/status' && method === 'GET') {
         await getUserSubscription(req, res);
+      } else if (path === '/subscriptions/buy' && method === 'POST') {
+        await buySubscription(req, res);
+      } else if (path === '/subscriptions/buy-addon' && method === 'POST') {
+        await buyAddon(req, res);
       } else if (path === '/subscriptions/purchase' && method === 'POST') {
+        // Legacy route for backward compatibility
         await buySubscription(req, res);
       } else if (path === '/subscriptions/purchase-addon' && method === 'POST') {
+        // Legacy route for backward compatibility
         await buyAddon(req, res);
       } else if (path === '/subscriptions/use-response' && method === 'POST') {
         await useResponse(req, res);
-      } else if (path === '/subscriptions/response-history' && method === 'GET') {
+      } else if (path === '/subscriptions/responses' && method === 'GET') {
         await getResponseHistory(req, res);
+      } else if (path === '/subscriptions/response-history' && method === 'GET') {
+        // Legacy route for backward compatibility
+        await getResponseHistory(req, res);
+      } else if (path === '/subscriptions/transactions' && method === 'GET') {
+        await getTransactionHistory(req, res);
       } else if (path === '/subscriptions/transaction-history' && method === 'GET') {
+        // Legacy route for backward compatibility
         await getTransactionHistory(req, res);
       } else if (path === '/subscriptions/usage-logs' && method === 'GET') {
         await getUsageLogs(req, res);
-      } else if (path === '/subscriptions/all' && method === 'GET') {
+      } else if (path === '/subscriptions/admin/all' && method === 'GET') {
         await getAllSubscriptions(req, res);
+      } else if (path === '/subscriptions/all' && method === 'GET') {
+        // Legacy route for backward compatibility
+        await getAllSubscriptions(req, res);
+      } else if (path === '/subscriptions/admin/refresh-responses' && method === 'POST') {
+        await refreshResponses(req, res);
       } else if (path === '/subscriptions/refresh-responses' && method === 'POST') {
+        // Legacy route for backward compatibility
         await refreshResponses(req, res);
       }
       
