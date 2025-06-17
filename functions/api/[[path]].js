@@ -90,6 +90,20 @@ import {
   deleteUserProfile,
   getProfileCompletion
 } from '../../src/controllers/userProfileController.js';
+import {
+  getSubscriptionPlans,
+  getAddonPlans,
+  getUserSubscriptionStatus,
+  purchaseSubscription,
+  purchaseAddon,
+  useResponse,
+  getResponseHistory,
+  getTransactionHistory,
+  getUsageLogs,
+  cancelSubscription,
+  renewSubscription,
+  getSubscriptionAnalytics
+} from '../../src/controllers/subscriptionController.js';
 import applicationController from '../../src/controllers/applicationController.js';
 
 // Import auth middleware functions
@@ -215,7 +229,17 @@ export async function onRequest(context) {
     // Routes that require authentication
     const protectedRoutes = [
       '/auth/profile',
-      '/user-profile'
+      '/user-profile',
+      '/subscriptions/status',
+      '/subscriptions/purchase',
+      '/subscriptions/purchase-addon',
+      '/subscriptions/use-response',
+      '/subscriptions/response-history',
+      '/subscriptions/transaction-history',
+      '/subscriptions/usage-logs',
+      '/subscriptions/cancel',
+      '/subscriptions/renew',
+      '/subscriptions/analytics'
     ];
 
     // Blog routes use UID-based admin verification, not JWT authentication
@@ -522,6 +546,33 @@ export async function onRequest(context) {
       } else if (path.startsWith('/applications/') && method === 'DELETE') {
         req.params.id = path.split('/')[2];
         await applicationController.deleteApplication(req, res);
+      }
+      
+      // Subscription routes
+      else if (path === '/subscriptions/plans' && method === 'GET') {
+        await getSubscriptionPlans(req, res);
+      } else if (path === '/subscriptions/addons' && method === 'GET') {
+        await getAddonPlans(req, res);
+      } else if (path === '/subscriptions/status' && method === 'GET') {
+        await getUserSubscriptionStatus(req, res);
+      } else if (path === '/subscriptions/purchase' && method === 'POST') {
+        await purchaseSubscription(req, res);
+      } else if (path === '/subscriptions/purchase-addon' && method === 'POST') {
+        await purchaseAddon(req, res);
+      } else if (path === '/subscriptions/use-response' && method === 'POST') {
+        await useResponse(req, res);
+      } else if (path === '/subscriptions/response-history' && method === 'GET') {
+        await getResponseHistory(req, res);
+      } else if (path === '/subscriptions/transaction-history' && method === 'GET') {
+        await getTransactionHistory(req, res);
+      } else if (path === '/subscriptions/usage-logs' && method === 'GET') {
+        await getUsageLogs(req, res);
+      } else if (path === '/subscriptions/cancel' && method === 'POST') {
+        await cancelSubscription(req, res);
+      } else if (path === '/subscriptions/renew' && method === 'POST') {
+        await renewSubscription(req, res);
+      } else if (path === '/subscriptions/analytics' && method === 'GET') {
+        await getSubscriptionAnalytics(req, res);
       }
       
       // Default route
