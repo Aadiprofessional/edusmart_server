@@ -3,7 +3,7 @@
 
 // Import all controllers
 import { register, login, getProfile, logout, refreshToken } from '../../src/controllers/authController.js';
-import { getAllUsers, getUserById, updateUser, deleteUser } from '../../src/controllers/userController.js';
+import { getAllUsers, getUserById, updateUser, deleteUser, getUserStats } from '../../src/controllers/userController.js';
 import { getBlogs, getBlogById, createBlog, updateBlog, deleteBlog, getBlogCategories, getBlogTags } from '../../src/controllers/blogController.js';
 import { 
   // Course management
@@ -133,6 +133,48 @@ async function authenticateRequest(req) {
   }
 }
 
+// Upload helper functions (since we can't use multer in Cloudflare Pages)
+async function handleImageUpload(file, folder = 'images') {
+  try {
+    const { supabaseAdmin } = await import('../../src/utils/supabase.js');
+    const { v4: uuidv4 } = await import('uuid');
+    
+    // Generate unique filename
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `${uuidv4()}.${fileExtension}`;
+    const filePath = `${folder}/${fileName}`;
+
+    // Upload to Supabase storage
+    const { data, error } = await supabaseAdmin().storage
+      .from('university-images')
+      .upload(filePath, file, {
+        contentType: file.type,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabaseAdmin().storage
+      .from('university-images')
+      .getPublicUrl(filePath);
+
+    return {
+      success: true,
+      url: publicUrl,
+      filename: fileName,
+      originalName: file.name,
+      size: file.size,
+      path: filePath
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   
@@ -232,6 +274,7 @@ export async function onRequest(context) {
     const protectedRoutes = [
       '/auth/profile',
       '/user-profile',
+      '/user/profile',
       '/subscriptions/status',
       '/subscriptions/purchase',
       '/subscriptions/purchase-addon',
@@ -245,7 +288,7 @@ export async function onRequest(context) {
 
     // Blog routes use UID-based admin verification, not JWT authentication
     // Course routes also use UID-based admin verification for admin operations
-    const uidBasedAdminRoutes = ['/blogs', '/courses', '/scholarships', '/universities', '/responses', '/case-studies'];
+    const uidBasedAdminRoutes = ['/blogs', '/courses', '/scholarships', '/universities', '/responses', '/case-studies', '/uploads'];
     
     const requiresAuth = protectedRoutes.some(route => {
       if (route === path) return true;
@@ -295,6 +338,8 @@ export async function onRequest(context) {
       // User routes
       else if (path === '/users' && method === 'GET') {
         await getAllUsers(req, res);
+      } else if (path === '/users/stats' && method === 'GET') {
+        await getUserStats(req, res);
       } else if (path.startsWith('/users/') && method === 'GET') {
         req.params.id = path.split('/')[2];
         await getUserById(req, res);
@@ -306,12 +351,29 @@ export async function onRequest(context) {
         await deleteUser(req, res);
       }
       
-      // User Profile routes
+      // User Profile routes (using /user prefix to match main app)
+      else if (path === '/user/profile' && method === 'POST') {
+        await createOrUpdateProfile(req, res);
+      } else if (path === '/user/profile' && method === 'GET') {
+        await getUserProfile(req, res);
+      } else if (path === '/user/profile' && method === 'PUT') {
+        await createOrUpdateProfile(req, res);
+      } else if (path === '/user/profile' && method === 'PATCH') {
+        await updateProfileFields(req, res);
+      } else if (path === '/user/profile' && method === 'DELETE') {
+        await deleteUserProfile(req, res);
+      } else if (path === '/user/profile/completion' && method === 'GET') {
+        await getProfileCompletion(req, res);
+      }
+      
+      // Legacy user-profile routes (backward compatibility)
       else if (path === '/user-profile' && method === 'POST') {
         await createOrUpdateProfile(req, res);
       } else if (path === '/user-profile' && method === 'GET') {
         await getUserProfile(req, res);
       } else if (path === '/user-profile' && method === 'PUT') {
+        await createOrUpdateProfile(req, res);
+      } else if (path === '/user-profile' && method === 'PATCH') {
         await updateProfileFields(req, res);
       } else if (path === '/user-profile' && method === 'DELETE') {
         await deleteUserProfile(req, res);
@@ -343,7 +405,7 @@ export async function onRequest(context) {
         await deleteBlog(req, res);
       }
       
-      // Course routes
+      // Course routes (v1 - basic)
       else if (path === '/courses' && method === 'GET') {
         await getCourses(req, res);
       } else if (path === '/courses' && method === 'POST') {
@@ -352,6 +414,110 @@ export async function onRequest(context) {
         await getCourseCategories(req, res);
       } else if (path === '/courses/levels' && method === 'GET') {
         await getCourseLevels(req, res);
+      }
+      
+      // Enhanced Course routes (v2 API)
+      else if (path === '/v2/courses' && method === 'GET') {
+        await getCourses(req, res);
+      } else if (path === '/v2/courses' && method === 'POST') {
+        await createCourse(req, res);
+      } else if (path === '/v2/course-categories' && method === 'GET') {
+        await getCourseCategories(req, res);
+      } else if (path === '/v2/courses/categories' && method === 'GET') {
+        await getCourseCategories(req, res);
+      } else if (path === '/v2/course-levels' && method === 'GET') {
+        await getCourseLevels(req, res);
+      } else if (path === '/v2/courses/levels' && method === 'GET') {
+        await getCourseLevels(req, res);
+      }
+      
+      // V2 Specific course routes (must come before generic /v2/courses/:id)
+      else if (path.match(/^\/v2\/courses\/[^\/]+\/enroll$/) && method === 'POST') {
+        req.params.courseId = path.split('/')[3];
+        await enrollInCourse(req, res);
+      } else if (path.match(/^\/v2\/courses\/[^\/]+\/sections$/) && method === 'GET') {
+        req.params.courseId = path.split('/')[3];
+        await getCourseSections(req, res);
+      } else if (path.match(/^\/v2\/courses\/[^\/]+\/sections$/) && method === 'POST') {
+        req.params.courseId = path.split('/')[3];
+        await createCourseSection(req, res);
+      } else if (path.match(/^\/v2\/courses\/[^\/]+\/reviews$/) && method === 'GET') {
+        req.params.courseId = path.split('/')[3];
+        await getCourseReviews(req, res);
+      } else if (path.match(/^\/v2\/courses\/[^\/]+\/reviews$/) && method === 'POST') {
+        req.params.courseId = path.split('/')[3];
+        await createCourseReview(req, res);
+      } else if (path.match(/^\/v2\/courses\/[^\/]+\/enrollment\/[^\/]+$/) && method === 'GET') {
+        const pathParts = path.split('/');
+        req.params.courseId = pathParts[3];
+        req.params.userId = pathParts[5];
+        // Simple enrollment check endpoint
+        const { supabaseAdmin } = await import('../../src/utils/supabase.js');
+        try {
+          const { data: enrollment, error } = await supabaseAdmin()
+            .from('course_enrollments')
+            .select('*')
+            .eq('user_id', req.params.userId)
+            .eq('course_id', req.params.courseId)
+            .single();
+          
+          res.json({
+            success: true,
+            data: {
+              enrolled: !!enrollment,
+              enrollment: enrollment || null,
+              error: error?.message || null
+            }
+          });
+        } catch (error) {
+          res.status(500).json({ error: 'Server error checking enrollment' });
+        }
+      } else if (path.match(/^\/v2\/courses\/[^\/]+\/progress\/[^\/]+$/) && method === 'GET') {
+        const pathParts = path.split('/');
+        req.params.courseId = pathParts[3];
+        req.params.userId = pathParts[5];
+        await getCourseProgress(req, res);
+      } else if (path.match(/^\/v2\/courses\/[^\/]+\/progress$/) && method === 'POST') {
+        req.params.courseId = path.split('/')[3];
+        await updateLectureProgress(req, res);
+      } else if (path.match(/^\/v2\/users\/[^\/]+\/enrollments$/) && method === 'GET') {
+        req.params.userId = path.split('/')[3];
+        await getUserEnrollments(req, res);
+      } else if (path.match(/^\/v2\/sections\/[^\/]+$/) && method === 'PUT') {
+        req.params.sectionId = path.split('/')[3];
+        await updateCourseSection(req, res);
+      } else if (path.match(/^\/v2\/sections\/[^\/]+$/) && method === 'DELETE') {
+        req.params.sectionId = path.split('/')[3];
+        await deleteCourseSection(req, res);
+      } else if (path === '/v2/sections' && method === 'POST') {
+        await createCourseSection(req, res);
+      } else if (path.match(/^\/v2\/sections\/[^\/]+\/lectures$/) && method === 'POST') {
+        req.params.sectionId = path.split('/')[3];
+        await createCourseLecture(req, res);
+      } else if (path === '/v2/lectures' && method === 'POST') {
+        await createCourseLecture(req, res);
+      } else if (path.match(/^\/v2\/lectures\/[^\/]+$/) && method === 'PUT') {
+        req.params.lectureId = path.split('/')[3];
+        await updateCourseLecture(req, res);
+      } else if (path.match(/^\/v2\/lectures\/[^\/]+$/) && method === 'DELETE') {
+        req.params.lectureId = path.split('/')[3];
+        await deleteCourseLecture(req, res);
+      } else if (path === '/v2/generate-video-summary' && method === 'POST') {
+        await generateVideoSummary(req, res);
+      } else if (path === '/v2/admin/course-statistics' && method === 'GET') {
+        await getCourseStatistics(req, res);
+      }
+      
+      // V2 Generic course routes (must come after specific routes)
+      else if (path.startsWith('/v2/courses/') && method === 'GET') {
+        req.params.id = path.split('/')[3];
+        await getCourseById(req, res);
+      } else if (path.startsWith('/v2/courses/') && method === 'PUT') {
+        req.params.id = path.split('/')[3];
+        await updateCourse(req, res);
+      } else if (path.startsWith('/v2/courses/') && method === 'DELETE') {
+        req.params.id = path.split('/')[3];
+        await deleteCourse(req, res);
       }
       
       // Specific course routes (must come before generic /courses/:id)
@@ -377,7 +543,7 @@ export async function onRequest(context) {
         // Simple enrollment check endpoint
         const { supabaseAdmin } = await import('../../src/utils/supabase.js');
         try {
-          const { data: enrollment, error } = await supabaseAdmin
+          const { data: enrollment, error } = await supabaseAdmin()
             .from('course_enrollments')
             .select('*')
             .eq('user_id', req.params.userId)
@@ -443,6 +609,96 @@ export async function onRequest(context) {
       } else if (path.startsWith('/courses/') && method === 'DELETE') {
         req.params.id = path.split('/')[2];
         await deleteCourse(req, res);
+      }
+      
+      // Upload routes
+      else if (path === '/uploads/image' && method === 'POST') {
+        // Handle image upload
+        try {
+          const formData = await request.formData();
+          const file = formData.get('image');
+          
+          if (!file) {
+            res.status(400).json({ error: 'No file uploaded' });
+          } else {
+            const result = await handleImageUpload(file, 'images');
+            if (result.success) {
+              res.json(result);
+            } else {
+              res.status(500).json({ error: result.error });
+            }
+          }
+        } catch (error) {
+          res.status(500).json({ error: 'Failed to upload file' });
+        }
+      } else if (path === '/uploads/logo' && method === 'POST') {
+        // Handle logo upload
+        try {
+          const formData = await request.formData();
+          const file = formData.get('logo');
+          
+          if (!file) {
+            res.status(400).json({ error: 'No file uploaded' });
+          } else {
+            const result = await handleImageUpload(file, 'logos');
+            if (result.success) {
+              res.json(result);
+            } else {
+              res.status(500).json({ error: result.error });
+            }
+          }
+        } catch (error) {
+          res.status(500).json({ error: 'Failed to upload file' });
+        }
+      } else if (path === '/uploads/gallery' && method === 'POST') {
+        // Handle gallery upload
+        try {
+          const formData = await request.formData();
+          const files = formData.getAll('images');
+          
+          if (!files || files.length === 0) {
+            res.status(400).json({ error: 'No files uploaded' });
+          } else {
+            const uploadPromises = files.map(file => handleImageUpload(file, 'gallery'));
+            const results = await Promise.all(uploadPromises);
+            
+            const successfulUploads = results.filter(r => r.success);
+            const failedUploads = results.filter(r => !r.success);
+            
+            if (successfulUploads.length > 0) {
+              res.json({
+                success: true,
+                files: successfulUploads,
+                failed: failedUploads
+              });
+            } else {
+              res.status(500).json({ error: 'All uploads failed' });
+            }
+          }
+        } catch (error) {
+          res.status(500).json({ error: 'Failed to upload gallery images' });
+        }
+      } else if (path.match(/^\/uploads\/image\/(.+)$/) && method === 'DELETE') {
+        // Handle image deletion
+        try {
+          const filePath = path.replace('/uploads/image/', '');
+          const { supabaseAdmin } = await import('../../src/utils/supabase.js');
+          
+          const { error } = await supabaseAdmin().storage
+            .from('university-images')
+            .remove([filePath]);
+
+          if (error) {
+            res.status(500).json({ error: 'Failed to delete file' });
+          } else {
+            res.json({
+              success: true,
+              message: 'File deleted successfully'
+            });
+          }
+        } catch (error) {
+          res.status(500).json({ error: 'Failed to delete file' });
+        }
       }
       
       // Case Study routes
@@ -538,6 +794,11 @@ export async function onRequest(context) {
         await applicationController.getAllApplications(req, res);
       } else if (path === '/applications' && method === 'POST') {
         await applicationController.createApplication(req, res);
+      } else if (path === '/applications/stats/overview' && method === 'GET') {
+        await applicationController.getApplicationStats(req, res);
+      } else if (path.match(/^\/applications\/user\/[^\/]+$/) && method === 'GET') {
+        req.params.userId = path.split('/')[3];
+        await applicationController.getApplicationsByUser(req, res);
       } else if (path.startsWith('/applications/') && method === 'GET') {
         req.params.id = path.split('/')[2];
         await applicationController.getApplicationById(req, res);
@@ -547,6 +808,9 @@ export async function onRequest(context) {
       } else if (path.startsWith('/applications/') && method === 'DELETE') {
         req.params.id = path.split('/')[2];
         await applicationController.deleteApplication(req, res);
+      } else if (path.match(/^\/applications\/[^\/]+\/status$/) && method === 'PATCH') {
+        req.params.id = path.split('/')[2];
+        await applicationController.updateApplicationStatus(req, res);
       }
       
       // Subscription routes
@@ -572,6 +836,30 @@ export async function onRequest(context) {
         await getAllSubscriptions(req, res);
       } else if (path === '/subscriptions/refresh-responses' && method === 'POST') {
         await refreshResponses(req, res);
+      }
+      
+      // Root route
+      else if (path === '/' && method === 'GET') {
+        res.json({
+          message: 'Welcome to EduSmart API',
+          version: '2.0.0',
+          status: 'online',
+          endpoints: {
+            auth: '/api/auth',
+            blogs: '/api/blogs',
+            courses: '/api/courses',
+            enhancedCourses: '/api/v2/courses',
+            caseStudies: '/api/case-studies',
+            responses: '/api/responses',
+            scholarships: '/api/scholarships',
+            users: '/api/users',
+            userProfile: '/api/user/profile',
+            universities: '/api/universities',
+            uploads: '/api/uploads',
+            subscriptions: '/api/subscriptions',
+            applications: '/api/applications'
+          }
+        });
       }
       
       // Default route
