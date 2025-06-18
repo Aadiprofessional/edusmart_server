@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 // Get all blogs with pagination and filtering
 const getBlogs = async (req, res) => {
   try {
-    const { page = 1, limit = 10, category, tag, search } = req.query;
+    const { page = 1, limit = 10, category, tag, search, featured } = req.query;
     const offset = (page - 1) * limit;
     
     let query = supabaseAdmin()
@@ -18,6 +18,10 @@ const getBlogs = async (req, res) => {
     
     if (tag) {
       query = query.contains('tags', [tag]);
+    }
+    
+    if (featured !== undefined) {
+      query = query.eq('featured', featured === 'true');
     }
     
     if (search) {
@@ -123,13 +127,14 @@ const createBlog = async (req, res) => {
       excerpt, 
       category, 
       tags, 
-      image
+      image,
+      featured
     } = req.body;
     
     // The UID has already been verified by checkAdminByUid middleware
     const authorId = uid;
     
-    // Prepare blog data without featured field to avoid schema issues
+    // Include featured field in blog data
     const blogData = {
           id: uuidv4(),
           title,
@@ -138,6 +143,7 @@ const createBlog = async (req, res) => {
           category,
           tags,
           image,
+          featured: featured || false,
           author_id: authorId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -182,7 +188,8 @@ const updateBlog = async (req, res) => {
       excerpt, 
       category, 
       tags, 
-      image
+      image,
+      featured
     } = req.body;
     
     // First check if the blog exists
@@ -196,7 +203,7 @@ const updateBlog = async (req, res) => {
       return res.status(404).json({ error: 'Blog not found' });
     }
     
-    // Prepare update data without featured field
+    // Include featured field in update data
     const updateData = {
         title,
         content,
@@ -204,6 +211,7 @@ const updateBlog = async (req, res) => {
         category,
         tags,
         image,
+        featured,
       updated_at: new Date().toISOString()
     };
     

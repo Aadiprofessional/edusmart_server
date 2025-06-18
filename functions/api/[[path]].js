@@ -103,6 +103,10 @@ import {
   getAllSubscriptions,
   refreshResponses
 } from '../../src/controllers/subscriptionController.js';
+import {
+  getAllFeaturedItems,
+  getFeaturedItemsByType
+} from '../../src/controllers/featuredController.js';
 import applicationController from '../../src/controllers/applicationController.js';
 
 // Import auth middleware functions
@@ -873,6 +877,14 @@ export async function onRequest(context) {
         await refreshResponses(req, res);
       }
       
+      // Featured routes
+      else if (path === '/featured' && method === 'GET') {
+        await getAllFeaturedItems(req, res);
+      } else if (path.match(/^\/featured\/[^\/]+$/) && method === 'GET') {
+        req.params.type = path.split('/')[2];
+        await getFeaturedItemsByType(req, res);
+      }
+      
       // Root route
       else if (path === '/' && method === 'GET') {
         res.json({
@@ -892,7 +904,8 @@ export async function onRequest(context) {
             universities: '/api/universities',
             uploads: '/api/uploads',
             subscriptions: '/api/subscriptions',
-            applications: '/api/applications'
+            applications: '/api/applications',
+            featured: '/api/featured'
           }
         });
       }

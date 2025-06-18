@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 // Get all scholarships with pagination and filtering
 const getScholarships = async (req, res) => {
   try {
-    const { page = 1, limit = 10, country, university, search } = req.query;
+    const { page = 1, limit = 10, country, university, search, featured } = req.query;
     const offset = (page - 1) * limit;
     
     let query = supabase()
@@ -18,6 +18,10 @@ const getScholarships = async (req, res) => {
     
     if (university) {
       query = query.eq('university', university);
+    }
+    
+    if (featured !== undefined) {
+      query = query.eq('featured', featured === 'true');
     }
     
     if (search) {
@@ -89,7 +93,8 @@ const createScholarship = async (req, res) => {
       country, 
       application_link,
       requirements,
-      image
+      image,
+      featured
     } = req.body;
     
     // The UID has already been verified by checkAdminByUid middleware
@@ -111,6 +116,7 @@ const createScholarship = async (req, res) => {
           application_link,
           requirements,
           image,
+          featured: featured || false,
           created_by: createdBy,
           created_at: new Date(),
           updated_at: new Date()
@@ -149,7 +155,8 @@ const updateScholarship = async (req, res) => {
       country, 
       application_link,
       requirements,
-      image
+      image,
+      featured
     } = req.body;
     
     // First check if the scholarship exists
@@ -177,6 +184,7 @@ const updateScholarship = async (req, res) => {
         application_link,
         requirements,
         image,
+        featured,
         updated_at: new Date()
       })
       .eq('id', id)

@@ -56,6 +56,11 @@ const blogValidationRules = [
     .isURL()
     .withMessage('Image must be a valid URL'),
   
+  body('featured')
+    .optional()
+    .isBoolean()
+    .withMessage('Featured must be a boolean'),
+  
   validateRequest
 ];
 
@@ -319,6 +324,11 @@ const scholarshipValidationRules = [
     .optional()
     .isURL()
     .withMessage('Application link must be a valid URL'),
+  
+  body('featured')
+    .optional()
+    .isBoolean()
+    .withMessage('Featured must be a boolean'),
   
   validateRequest
 ];
