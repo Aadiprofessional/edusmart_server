@@ -66,8 +66,8 @@ const getAllFeaturedItems = async (req, res) => {
         .limit(itemLimit)
     ]);
 
-    // Process results and handle any errors
-    const featuredItems = {
+    // Process results and return clean arrays
+    const response = {
       blogs: [],
       courses: [],
       case_studies: [],
@@ -78,73 +78,34 @@ const getAllFeaturedItems = async (req, res) => {
 
     // Extract successful results
     if (blogsResult.status === 'fulfilled' && !blogsResult.value.error) {
-      featuredItems.blogs = (blogsResult.value.data || []).map(item => ({
-        ...item,
-        type: 'blog'
-      }));
+      response.blogs = blogsResult.value.data || [];
     }
 
     if (coursesResult.status === 'fulfilled' && !coursesResult.value.error) {
-      featuredItems.courses = (coursesResult.value.data || []).map(item => ({
-        ...item,
-        type: 'course'
-      }));
+      response.courses = coursesResult.value.data || [];
     }
 
     if (caseStudiesResult.status === 'fulfilled' && !caseStudiesResult.value.error) {
-      featuredItems.case_studies = (caseStudiesResult.value.data || []).map(item => ({
-        ...item,
-        type: 'case_study'
-      }));
+      response.case_studies = caseStudiesResult.value.data || [];
     }
 
     if (scholarshipsResult.status === 'fulfilled' && !scholarshipsResult.value.error) {
-      featuredItems.scholarships = (scholarshipsResult.value.data || []).map(item => ({
-        ...item,
-        type: 'scholarship'
-      }));
+      response.scholarships = scholarshipsResult.value.data || [];
     }
 
     if (universitiesResult.status === 'fulfilled' && !universitiesResult.value.error) {
-      featuredItems.universities = (universitiesResult.value.data || []).map(item => ({
-        ...item,
-        type: 'university'
-      }));
+      response.universities = universitiesResult.value.data || [];
     }
 
     if (responsesResult.status === 'fulfilled' && !responsesResult.value.error) {
-      featuredItems.resources = (responsesResult.value.data || []).map(item => ({
-        ...item,
-        type: 'resource'
-      }));
+      response.resources = responsesResult.value.data || [];
     }
 
-    // Calculate total counts
-    const totalCounts = {
-      blogs: featuredItems.blogs.length,
-      courses: featuredItems.courses.length,
-      case_studies: featuredItems.case_studies.length,
-      scholarships: featuredItems.scholarships.length,
-      universities: featuredItems.universities.length,
-      resources: featuredItems.resources.length
-    };
-
-    const totalItems = Object.values(totalCounts).reduce((sum, count) => sum + count, 0);
-
-    res.status(200).json({
-      success: true,
-      message: 'Featured items retrieved successfully',
-      data: featuredItems,
-      summary: {
-        total_featured_items: totalItems,
-        counts_by_type: totalCounts
-      }
-    });
+    res.status(200).json(response);
 
   } catch (error) {
     console.error('Get featured items error:', error);
     res.status(500).json({
-      success: false,
       error: 'Server error fetching featured items',
       details: error.message
     });
@@ -194,7 +155,6 @@ const getFeaturedItemsByType = async (req, res) => {
       
       default:
         return res.status(400).json({
-          success: false,
           error: 'Invalid type',
           message: 'Type must be one of: blogs, courses, case_studies, scholarships, universities, resources'
         });
@@ -209,7 +169,6 @@ const getFeaturedItemsByType = async (req, res) => {
     if (error) {
       console.error(`Error fetching featured ${type}:`, error);
       return res.status(500).json({
-        success: false,
         error: `Failed to fetch featured ${type}`,
         details: error.message
       });
@@ -218,8 +177,6 @@ const getFeaturedItemsByType = async (req, res) => {
     const totalPages = Math.ceil(count / limit);
 
     res.status(200).json({
-      success: true,
-      message: `Featured ${type} retrieved successfully`,
       data: items || [],
       pagination: {
         totalItems: count,
@@ -232,7 +189,6 @@ const getFeaturedItemsByType = async (req, res) => {
   } catch (error) {
     console.error(`Get featured ${req.params.type} error:`, error);
     res.status(500).json({
-      success: false,
       error: `Server error fetching featured ${req.params.type}`,
       details: error.message
     });
