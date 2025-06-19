@@ -1,4 +1,4 @@
-import { supabase as getSupabase } from '../utils/supabase.js';
+import { supabase } from '../utils/supabase.js';
 
 // Get all featured items from all tables
 const getAllFeaturedItems = async (req, res) => {
@@ -16,7 +16,7 @@ const getAllFeaturedItems = async (req, res) => {
       responsesResult
     ] = await Promise.allSettled([
       // Featured blogs
-      getSupabase()
+      supabase()
         .from('blogs')
         .select('id, title, excerpt, image, category, tags, created_at, author_id')
         .eq('featured', true)
@@ -24,7 +24,7 @@ const getAllFeaturedItems = async (req, res) => {
         .limit(itemLimit),
       
       // Featured courses
-      getSupabase()
+      supabase()
         .from('courses')
         .select('id, title, description, thumbnail_image, category, level, price, instructor_name, rating, featured, created_at')
         .eq('featured', true)
@@ -33,7 +33,7 @@ const getAllFeaturedItems = async (req, res) => {
         .limit(itemLimit),
       
       // Featured case studies
-      getSupabase()
+      supabase()
         .from('case_studies')
         .select('id, title, description, student_name, student_image, category, outcome, target_country, featured, created_at')
         .eq('featured', true)
@@ -42,7 +42,7 @@ const getAllFeaturedItems = async (req, res) => {
         .limit(itemLimit),
       
       // Featured scholarships
-      getSupabase()
+      supabase()
         .from('scholarships')
         .select('id, title, description, amount, university, country, deadline, image, featured, created_at')
         .eq('featured', true)
@@ -50,7 +50,7 @@ const getAllFeaturedItems = async (req, res) => {
         .limit(itemLimit),
       
       // Featured universities
-      getSupabase()
+      supabase()
         .from('universities')
         .select('id, name, description, country, city, image, ranking, tuition_fee, featured, created_at')
         .eq('featured', true)
@@ -58,7 +58,7 @@ const getAllFeaturedItems = async (req, res) => {
         .limit(itemLimit),
       
       // Featured resources/responses
-      getSupabase()
+      supabase()
         .from('responses')
         .select('id, title, description, type, category, thumbnail, featured, created_at')
         .eq('featured', true)
@@ -119,38 +119,63 @@ const getFeaturedItemsByType = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
 
-    let query;
-    let selectFields;
+    let result;
 
     switch (type) {
       case 'blogs':
-        selectFields = 'id, title, excerpt, image, category, tags, created_at, author_id';
-        query = getSupabase().from('blogs');
+        result = await supabase()
+          .from('blogs')
+          .select('id, title, excerpt, image, category, tags, created_at, author_id', { count: 'exact' })
+          .eq('featured', true)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
         break;
       
       case 'courses':
-        selectFields = 'id, title, description, thumbnail_image, category, level, price, instructor_name, rating, created_at';
-        query = getSupabase().from('courses').eq('status', 'published');
+        result = await supabase()
+          .from('courses')
+          .select('id, title, description, thumbnail_image, category, level, price, instructor_name, rating, created_at', { count: 'exact' })
+          .eq('featured', true)
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
         break;
       
       case 'case_studies':
-        selectFields = 'id, title, description, student_name, student_image, category, outcome, target_country, created_at';
-        query = getSupabase().from('case_studies').eq('status', 'published');
+        result = await supabase()
+          .from('case_studies')
+          .select('id, title, description, student_name, student_image, category, outcome, target_country, created_at', { count: 'exact' })
+          .eq('featured', true)
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
         break;
       
       case 'scholarships':
-        selectFields = 'id, title, description, amount, university, country, deadline, image, created_at';
-        query = getSupabase().from('scholarships');
+        result = await supabase()
+          .from('scholarships')
+          .select('id, title, description, amount, university, country, deadline, image, created_at', { count: 'exact' })
+          .eq('featured', true)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
         break;
       
       case 'universities':
-        selectFields = 'id, name, description, country, city, image, ranking, tuition_fee, created_at';
-        query = getSupabase().from('universities');
+        result = await supabase()
+          .from('universities')
+          .select('id, name, description, country, city, image, ranking, tuition_fee, created_at', { count: 'exact' })
+          .eq('featured', true)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
         break;
       
       case 'resources':
-        selectFields = 'id, title, description, type, category, thumbnail, created_at';
-        query = getSupabase().from('responses');
+        result = await supabase()
+          .from('responses')
+          .select('id, title, description, type, category, thumbnail, created_at', { count: 'exact' })
+          .eq('featured', true)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
         break;
       
       default:
@@ -160,11 +185,7 @@ const getFeaturedItemsByType = async (req, res) => {
         });
     }
 
-    const { data: items, error, count } = await query
-      .select(selectFields, { count: 'exact' })
-      .eq('featured', true)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    const { data: items, error, count } = result;
 
     if (error) {
       console.error(`Error fetching featured ${type}:`, error);
