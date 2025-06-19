@@ -1,4 +1,4 @@
-import { supabase } from '../utils/supabase.js';
+import { supabase as getSupabase } from '../utils/supabase.js';
 
 // Get all featured items from all tables
 const getAllFeaturedItems = async (req, res) => {
@@ -16,7 +16,7 @@ const getAllFeaturedItems = async (req, res) => {
       responsesResult
     ] = await Promise.allSettled([
       // Featured blogs
-      supabase()
+      getSupabase()
         .from('blogs')
         .select('id, title, excerpt, image, category, tags, created_at, author_id')
         .eq('featured', true)
@@ -24,7 +24,7 @@ const getAllFeaturedItems = async (req, res) => {
         .limit(itemLimit),
       
       // Featured courses
-      supabase()
+      getSupabase()
         .from('courses')
         .select('id, title, description, thumbnail_image, category, level, price, instructor_name, rating, featured, created_at')
         .eq('featured', true)
@@ -33,7 +33,7 @@ const getAllFeaturedItems = async (req, res) => {
         .limit(itemLimit),
       
       // Featured case studies
-      supabase()
+      getSupabase()
         .from('case_studies')
         .select('id, title, description, student_name, student_image, category, outcome, target_country, featured, created_at')
         .eq('featured', true)
@@ -42,7 +42,7 @@ const getAllFeaturedItems = async (req, res) => {
         .limit(itemLimit),
       
       // Featured scholarships
-      supabase()
+      getSupabase()
         .from('scholarships')
         .select('id, title, description, amount, university, country, deadline, image, featured, created_at')
         .eq('featured', true)
@@ -50,7 +50,7 @@ const getAllFeaturedItems = async (req, res) => {
         .limit(itemLimit),
       
       // Featured universities
-      supabase()
+      getSupabase()
         .from('universities')
         .select('id, name, description, country, city, image, ranking, tuition_fee, featured, created_at')
         .eq('featured', true)
@@ -58,7 +58,7 @@ const getAllFeaturedItems = async (req, res) => {
         .limit(itemLimit),
       
       // Featured resources/responses
-      supabase()
+      getSupabase()
         .from('responses')
         .select('id, title, description, type, category, thumbnail, featured, created_at')
         .eq('featured', true)
@@ -125,32 +125,32 @@ const getFeaturedItemsByType = async (req, res) => {
     switch (type) {
       case 'blogs':
         selectFields = 'id, title, excerpt, image, category, tags, created_at, author_id';
-        query = supabase().from('blogs');
+        query = getSupabase().from('blogs');
         break;
       
       case 'courses':
         selectFields = 'id, title, description, thumbnail_image, category, level, price, instructor_name, rating, created_at';
-        query = supabase().from('courses').eq('status', 'published');
+        query = getSupabase().from('courses').eq('status', 'published');
         break;
       
       case 'case_studies':
         selectFields = 'id, title, description, student_name, student_image, category, outcome, target_country, created_at';
-        query = supabase().from('case_studies').eq('status', 'published');
+        query = getSupabase().from('case_studies').eq('status', 'published');
         break;
       
       case 'scholarships':
         selectFields = 'id, title, description, amount, university, country, deadline, image, created_at';
-        query = supabase().from('scholarships');
+        query = getSupabase().from('scholarships');
         break;
       
       case 'universities':
         selectFields = 'id, name, description, country, city, image, ranking, tuition_fee, created_at';
-        query = supabase().from('universities');
+        query = getSupabase().from('universities');
         break;
       
       case 'resources':
         selectFields = 'id, title, description, type, category, thumbnail, created_at';
-        query = supabase().from('responses');
+        query = getSupabase().from('responses');
         break;
       
       default:
