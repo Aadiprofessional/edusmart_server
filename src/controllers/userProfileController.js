@@ -32,7 +32,7 @@ const createOrUpdateProfile = async (req, res) => {
     delete profileData.created_at;
 
     // First, get or create the user's profile record
-    let { data: userProfile, error: profileError } = await supabaseAdmin
+    let { data: userProfile, error: profileError } = await supabaseAdmin()
       .from('profiles')
       .select('id, email, name')
       .eq('id', authUserId)
@@ -40,7 +40,7 @@ const createOrUpdateProfile = async (req, res) => {
 
     if (profileError || !userProfile) {
       // Create profile record if it doesn't exist
-      const { data: newProfile, error: createProfileError } = await supabaseAdmin
+      const { data: newProfile, error: createProfileError } = await supabaseAdmin()
         .from('profiles')
         .insert([{
           id: authUserId,
@@ -106,7 +106,7 @@ const createOrUpdateProfile = async (req, res) => {
     const sanitizedData = sanitizeData(profileData);
 
     // Check if user_profile already exists (using profiles.id as user_id)
-    const { data: existingUserProfile } = await supabaseAdmin
+    const { data: existingUserProfile } = await supabaseAdmin()
       .from('user_profiles')
       .select('id')
       .eq('user_id', userProfile.id)
@@ -115,7 +115,7 @@ const createOrUpdateProfile = async (req, res) => {
     let result;
     if (existingUserProfile) {
       // Update existing profile
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await supabaseAdmin()
         .from('user_profiles')
         .update({
           ...sanitizedData,
@@ -132,7 +132,7 @@ const createOrUpdateProfile = async (req, res) => {
       result = data;
     } else {
       // Create new profile (user_id references profiles.id)
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await supabaseAdmin()
         .from('user_profiles')
         .insert([{
           user_id: userProfile.id,
@@ -152,7 +152,7 @@ const createOrUpdateProfile = async (req, res) => {
     // Calculate and update completion percentage
     const completionPercentage = calculateProfileCompletion(result);
     
-    const { data: updatedProfile, error: updateError } = await supabaseAdmin
+    const { data: updatedProfile, error: updateError } = await supabaseAdmin()
       .from('user_profiles')
       .update({ profile_completion_percentage: completionPercentage })
       .eq('user_id', userProfile.id)
@@ -180,7 +180,7 @@ const getUserProfile = async (req, res) => {
     const authUserId = req.userId; // This is from auth.users.id
 
     // First get the user's profile record to get the profiles.id
-    const { data: userProfile, error: profileError } = await supabaseAdmin
+    const { data: userProfile, error: profileError } = await supabaseAdmin()
       .from('profiles')
       .select('id, email, name')
       .eq('id', authUserId)
@@ -191,7 +191,7 @@ const getUserProfile = async (req, res) => {
     }
 
     // Now get the detailed user_profile using profiles.id
-    const { data: profile, error } = await supabaseAdmin
+    const { data: profile, error } = await supabaseAdmin()
       .from('user_profiles')
       .select('*')
       .eq('user_id', userProfile.id)
@@ -223,7 +223,7 @@ const updateProfileFields = async (req, res) => {
     delete updateData.created_at;
 
     // Get the user's profile record to get the profiles.id
-    const { data: userProfile, error: profileError } = await supabaseAdmin
+    const { data: userProfile, error: profileError } = await supabaseAdmin()
       .from('profiles')
       .select('id')
       .eq('id', authUserId)
@@ -265,7 +265,7 @@ const updateProfileFields = async (req, res) => {
     const sanitizedData = sanitizeData(updateData);
 
     // Update the user profile
-    const { data: profile, error } = await supabaseAdmin
+    const { data: profile, error } = await supabaseAdmin()
       .from('user_profiles')
       .update({
         ...sanitizedData,
@@ -282,7 +282,7 @@ const updateProfileFields = async (req, res) => {
     // Calculate and update completion percentage
     const completionPercentage = calculateProfileCompletion(profile);
     
-    const { data: updatedProfile, error: updateError } = await supabaseAdmin
+    const { data: updatedProfile, error: updateError } = await supabaseAdmin()
       .from('user_profiles')
       .update({ profile_completion_percentage: completionPercentage })
       .eq('user_id', userProfile.id)
@@ -305,7 +305,7 @@ const deleteUserProfile = async (req, res) => {
     const authUserId = req.userId;
 
     // Get the user's profile record to get the profiles.id
-    const { data: userProfile, error: profileError } = await supabaseAdmin
+    const { data: userProfile, error: profileError } = await supabaseAdmin()
       .from('profiles')
       .select('id')
       .eq('id', authUserId)
@@ -316,7 +316,7 @@ const deleteUserProfile = async (req, res) => {
     }
 
     // Delete the user profile
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin()
       .from('user_profiles')
       .delete()
       .eq('user_id', userProfile.id);
@@ -340,7 +340,7 @@ const getProfileCompletion = async (req, res) => {
     const authUserId = req.userId;
 
     // Get the user's profile record to get the profiles.id
-    const { data: userProfile, error: profileError } = await supabaseAdmin
+    const { data: userProfile, error: profileError } = await supabaseAdmin()
       .from('profiles')
       .select('id')
       .eq('id', authUserId)
@@ -351,7 +351,7 @@ const getProfileCompletion = async (req, res) => {
     }
 
     // Get the user profile
-    const { data: profile, error } = await supabaseAdmin
+    const { data: profile, error } = await supabaseAdmin()
       .from('user_profiles')
       .select('profile_completion_percentage')
       .eq('user_id', userProfile.id)
