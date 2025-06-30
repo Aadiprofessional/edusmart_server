@@ -894,7 +894,7 @@ export async function onRequest(context) {
       
       // Homework routes
       else if (path === '/homework/submit' && method === 'POST') {
-        const result = await submitHomework(request);
+        const result = await submitHomework(req);
         return new Response(JSON.stringify(result.data), {
           status: result.status,
           headers: responseHeaders

@@ -55,24 +55,30 @@ export async function submitHomework(req) {
     let body;
     let file = null;
     
-    // Check content type to determine how to parse the request
-    const contentType = req.headers.get ? req.headers.get('content-type') : req.headers['content-type'];
-    
-    if (contentType?.includes('multipart/form-data')) {
-      const formData = await req.formData();
-      body = {};
-      
-      // Extract form fields
-      for (const [key, value] of formData.entries()) {
-        if (key === 'file' && value instanceof File) {
-          file = value;
-        } else {
-          body[key] = value;
-        }
-      }
+    // Check if body is already parsed (serverless environment)
+    if (req.body) {
+      body = req.body;
+      console.log('📦 Using pre-parsed body from serverless environment');
     } else {
-      // For JSON requests, parse once and store
-      body = await req.json();
+      // Parse body for environments where it hasn't been parsed yet
+      const contentType = req.headers.get ? req.headers.get('content-type') : req.headers['content-type'];
+      
+      if (contentType?.includes('multipart/form-data')) {
+        const formData = await req.formData();
+        body = {};
+        
+        // Extract form fields
+        for (const [key, value] of formData.entries()) {
+          if (key === 'file' && value instanceof File) {
+            file = value;
+          } else {
+            body[key] = value;
+          }
+        }
+      } else {
+        // For JSON requests, parse once and store
+        body = await req.json();
+      }
     }
 
     const { uid, question, solution, file_type, page_solutions, current_page, processing_complete } = body;
