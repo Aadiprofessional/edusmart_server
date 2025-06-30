@@ -131,6 +131,14 @@ import {
   updateFlashcard,
   deleteFlashcard
 } from '../../src/controllers/flashcardController.js';
+import {
+  saveContent,
+  getContentHistory,
+  getContentById,
+  updateContent,
+  deleteContent,
+  getContentStats
+} from '../../src/controllers/contentWriterController.js';
 import applicationController from '../../src/controllers/applicationController.js';
 
 // Import auth middleware functions
@@ -1012,6 +1020,26 @@ export async function onRequest(context) {
         await deleteFlashcard(req, res);
       }
       
+      // Content Writer routes
+      else if (path === '/content-writer/save' && method === 'POST') {
+        await saveContent(req, res);
+      } else if (path.match(/^\/content-writer\/history\/[^\/]+$/) && method === 'GET') {
+        req.params.uid = path.split('/')[3];
+        await getContentHistory(req, res);
+      } else if (path.match(/^\/content-writer\/stats\/[^\/]+$/) && method === 'GET') {
+        req.params.uid = path.split('/')[3];
+        await getContentStats(req, res);
+      } else if (path.match(/^\/content-writer\/[^\/]+$/) && method === 'GET') {
+        req.params.id = path.split('/')[2];
+        await getContentById(req, res);
+      } else if (path.match(/^\/content-writer\/[^\/]+$/) && method === 'PUT') {
+        req.params.id = path.split('/')[2];
+        await updateContent(req, res);
+      } else if (path.match(/^\/content-writer\/[^\/]+$/) && method === 'DELETE') {
+        req.params.id = path.split('/')[2];
+        await deleteContent(req, res);
+      }
+      
       // Root route
       else if (path === '/' && method === 'GET') {
         res.json({
@@ -1035,7 +1063,8 @@ export async function onRequest(context) {
             featured: '/api/featured',
             homework: '/api/homework',
             mistakeChecks: '/api/mistake-checks',
-            flashcards: '/api/flashcards'
+            flashcards: '/api/flashcards',
+            contentWriter: '/api/content-writer'
           }
         });
       }
