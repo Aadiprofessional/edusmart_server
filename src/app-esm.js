@@ -22,6 +22,7 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import featuredRoutes from './routes/featuredRoutes.js';
 import homeworkRoutes from './routes/homeworkRoutes.js';
+import mistakeCheckRoutes from './routes/mistakeCheckRoutes.js';
 
 // Initialize app
 const app = express();
@@ -170,6 +171,7 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api', featuredRoutes);
 app.use('/api/homework', homeworkRoutes);
+app.use('/api/mistake-checks', mistakeCheckRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -192,7 +194,8 @@ app.get('/', (req, res) => {
       uploads: '/api/uploads',
       subscriptions: '/api/subscriptions',
       featured: '/api/featured',
-      homework: '/api/homework'
+      homework: '/api/homework',
+      mistakeChecks: '/api/mistake-checks'
     }
   });
 });

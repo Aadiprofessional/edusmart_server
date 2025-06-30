@@ -114,6 +114,13 @@ import {
   deleteHomework,
   getHomeworkById
 } from '../../src/controllers/homeworkController.js';
+import {
+  submitMistakeCheck,
+  getMistakeCheckHistory,
+  updateMistakeCheck,
+  deleteMistakeCheck,
+  getMistakeCheckById
+} from '../../src/controllers/mistakeCheckController.js';
 import applicationController from '../../src/controllers/applicationController.js';
 
 // Import auth middleware functions
@@ -931,6 +938,45 @@ export async function onRequest(context) {
         });
       }
       
+      // Mistake Check routes
+      else if (path === '/mistake-checks/submit' && method === 'POST') {
+        const result = await submitMistakeCheck(req);
+        return new Response(JSON.stringify(result.data), {
+          status: result.status,
+          headers: responseHeaders
+        });
+      } else if (path.match(/^\/mistake-checks\/history\/[^\/]+$/) && method === 'GET') {
+        const uid = path.split('/')[3];
+        const result = await getMistakeCheckHistory(uid, req.query);
+        return new Response(JSON.stringify(result.data), {
+          status: result.status,
+          headers: responseHeaders
+        });
+      } else if (path.match(/^\/mistake-checks\/update\/[^\/]+$/) && method === 'PUT') {
+        const id = path.split('/')[3];
+        const result = await updateMistakeCheck(id, req.body);
+        return new Response(JSON.stringify(result.data), {
+          status: result.status,
+          headers: responseHeaders
+        });
+      } else if (path.match(/^\/mistake-checks\/[^\/]+$/) && method === 'DELETE') {
+        const id = path.split('/')[2];
+        const uid = req.query.uid;
+        const result = await deleteMistakeCheck(id, uid);
+        return new Response(JSON.stringify(result.data), {
+          status: result.status,
+          headers: responseHeaders
+        });
+      } else if (path.match(/^\/mistake-checks\/[^\/]+$/) && method === 'GET') {
+        const id = path.split('/')[2];
+        const uid = req.query.uid;
+        const result = await getMistakeCheckById(id, uid);
+        return new Response(JSON.stringify(result.data), {
+          status: result.status,
+          headers: responseHeaders
+        });
+      }
+      
       // Root route
       else if (path === '/' && method === 'GET') {
         res.json({
@@ -952,7 +998,8 @@ export async function onRequest(context) {
             subscriptions: '/api/subscriptions',
             applications: '/api/applications',
             featured: '/api/featured',
-            homework: '/api/homework'
+            homework: '/api/homework',
+            mistakeChecks: '/api/mistake-checks'
           }
         });
       }
