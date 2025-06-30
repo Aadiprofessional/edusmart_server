@@ -43,7 +43,7 @@ const handleControllerResponse = (res, result) => {
 };
 
 // Submit homework with file upload and solution
-router.post('/submit', async (req, res) => {
+router.post('/submit', upload.single('file'), async (req, res) => {
   try {
     console.log('📝 Express route: Homework submission request received');
     

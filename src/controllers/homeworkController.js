@@ -55,7 +55,10 @@ export async function submitHomework(req) {
     let body;
     let file = null;
     
-    if (req.headers.get('content-type')?.includes('multipart/form-data')) {
+    // Check content type to determine how to parse the request
+    const contentType = req.headers.get ? req.headers.get('content-type') : req.headers['content-type'];
+    
+    if (contentType?.includes('multipart/form-data')) {
       const formData = await req.formData();
       body = {};
       
@@ -68,6 +71,7 @@ export async function submitHomework(req) {
         }
       }
     } else {
+      // For JSON requests, parse once and store
       body = await req.json();
     }
 
