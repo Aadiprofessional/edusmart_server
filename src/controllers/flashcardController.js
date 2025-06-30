@@ -449,27 +449,36 @@ const updateFlashcard = async (req, res) => {
 const deleteFlashcard = async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id } = req.body;
+    const { user_id } = req.query || req.body; // Accept from both query and body
 
     if (!user_id) {
       return res.status(400).json({ error: 'user_id is required' });
     }
 
-    // Check if the flashcard exists and belongs to the user's set
+    // First, get the flashcard and its set to verify ownership
     const { data: existingCard, error: fetchError } = await supabaseAdmin()
       .from('flashcards')
-      .select(`
-        *,
-        flashcard_sets!inner(user_id)
-      `)
+      .select('id, flashcard_set_id')
       .eq('id', id)
-      .eq('flashcard_sets.user_id', user_id)
       .single();
 
     if (fetchError || !existingCard) {
       return res.status(404).json({ error: 'Flashcard not found' });
     }
 
+    // Check if the flashcard set belongs to the user
+    const { data: flashcardSet, error: setError } = await supabaseAdmin()
+      .from('flashcard_sets')
+      .select('user_id')
+      .eq('id', existingCard.flashcard_set_id)
+      .eq('user_id', user_id)
+      .single();
+
+    if (setError || !flashcardSet) {
+      return res.status(403).json({ error: 'Access denied: Flashcard does not belong to user' });
+    }
+
+    // Delete the flashcard
     const { error } = await supabaseAdmin()
       .from('flashcards')
       .delete()
