@@ -24,6 +24,7 @@ import featuredRoutes from './routes/featuredRoutes.js';
 import homeworkRoutes from './routes/homeworkRoutes.js';
 import mistakeCheckRoutes from './routes/mistakeCheckRoutes.js';
 import flashcardRoutes from './routes/flashcardRoutes.js';
+import contentWriterRoutes from './routes/contentWriterRoutes.js';
 
 // Initialize app
 const app = express();
@@ -174,6 +175,7 @@ app.use('/api', featuredRoutes);
 app.use('/api/homework', homeworkRoutes);
 app.use('/api/mistake-checks', mistakeCheckRoutes);
 app.use('/api/flashcards', flashcardRoutes);
+app.use('/api/content-writer', contentWriterRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -198,7 +200,8 @@ app.get('/', (req, res) => {
       featured: '/api/featured',
       homework: '/api/homework',
       mistakeChecks: '/api/mistake-checks',
-      flashcards: '/api/flashcards'
+      flashcards: '/api/flashcards',
+      contentWriter: '/api/content-writer'
     }
   });
 });
