@@ -21,6 +21,7 @@ import universityRoutes from './routes/universityRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import featuredRoutes from './routes/featuredRoutes.js';
+import homeworkRoutes from './routes/homeworkRoutes.js';
 
 // Initialize app
 const app = express();
@@ -168,6 +169,7 @@ app.use('/api/universities', universityRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api', featuredRoutes);
+app.use('/api/homework', homeworkRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -189,7 +191,8 @@ app.get('/', (req, res) => {
       universities: '/api/universities',
       uploads: '/api/uploads',
       subscriptions: '/api/subscriptions',
-      featured: '/api/featured'
+      featured: '/api/featured',
+      homework: '/api/homework'
     }
   });
 });

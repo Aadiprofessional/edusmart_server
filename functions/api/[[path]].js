@@ -107,6 +107,13 @@ import {
   getAllFeaturedItems,
   getFeaturedItemsByType
 } from '../../src/controllers/featuredController.js';
+import {
+  submitHomework,
+  getHomeworkHistory,
+  updateHomework,
+  deleteHomework,
+  getHomeworkById
+} from '../../src/controllers/homeworkController.js';
 import applicationController from '../../src/controllers/applicationController.js';
 
 // Import auth middleware functions
@@ -885,6 +892,45 @@ export async function onRequest(context) {
         await getFeaturedItemsByType(req, res);
       }
       
+      // Homework routes
+      else if (path === '/homework/submit' && method === 'POST') {
+        const result = await submitHomework(request);
+        return new Response(JSON.stringify(result.data), {
+          status: result.status,
+          headers: responseHeaders
+        });
+      } else if (path.match(/^\/homework\/history\/[^\/]+$/) && method === 'GET') {
+        const uid = path.split('/')[3];
+        const result = await getHomeworkHistory(uid, req.query);
+        return new Response(JSON.stringify(result.data), {
+          status: result.status,
+          headers: responseHeaders
+        });
+      } else if (path.match(/^\/homework\/update\/[^\/]+$/) && method === 'PUT') {
+        const id = path.split('/')[3];
+        const result = await updateHomework(id, req.body);
+        return new Response(JSON.stringify(result.data), {
+          status: result.status,
+          headers: responseHeaders
+        });
+      } else if (path.match(/^\/homework\/[^\/]+$/) && method === 'DELETE') {
+        const id = path.split('/')[2];
+        const uid = req.query.uid;
+        const result = await deleteHomework(id, uid);
+        return new Response(JSON.stringify(result.data), {
+          status: result.status,
+          headers: responseHeaders
+        });
+      } else if (path.match(/^\/homework\/[^\/]+$/) && method === 'GET') {
+        const id = path.split('/')[2];
+        const uid = req.query.uid;
+        const result = await getHomeworkById(id, uid);
+        return new Response(JSON.stringify(result.data), {
+          status: result.status,
+          headers: responseHeaders
+        });
+      }
+      
       // Root route
       else if (path === '/' && method === 'GET') {
         res.json({
@@ -905,7 +951,8 @@ export async function onRequest(context) {
             uploads: '/api/uploads',
             subscriptions: '/api/subscriptions',
             applications: '/api/applications',
-            featured: '/api/featured'
+            featured: '/api/featured',
+            homework: '/api/homework'
           }
         });
       }
