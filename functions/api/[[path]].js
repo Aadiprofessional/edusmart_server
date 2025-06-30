@@ -121,6 +121,16 @@ import {
   deleteMistakeCheck,
   getMistakeCheckById
 } from '../../src/controllers/mistakeCheckController.js';
+import {
+  getUserFlashcardSets,
+  getFlashcardSetById,
+  createFlashcardSet,
+  updateFlashcardSet,
+  deleteFlashcardSet,
+  addFlashcard,
+  updateFlashcard,
+  deleteFlashcard
+} from '../../src/controllers/flashcardController.js';
 import applicationController from '../../src/controllers/applicationController.js';
 
 // Import auth middleware functions
@@ -977,6 +987,31 @@ export async function onRequest(context) {
         });
       }
       
+      // Flashcard routes
+      else if (path === '/flashcards/sets' && method === 'GET') {
+        await getUserFlashcardSets(req, res);
+      } else if (path === '/flashcards/sets' && method === 'POST') {
+        await createFlashcardSet(req, res);
+      } else if (path.match(/^\/flashcards\/sets\/[^\/]+$/) && method === 'GET') {
+        req.params.id = path.split('/')[3];
+        await getFlashcardSetById(req, res);
+      } else if (path.match(/^\/flashcards\/sets\/[^\/]+$/) && method === 'PUT') {
+        req.params.id = path.split('/')[3];
+        await updateFlashcardSet(req, res);
+      } else if (path.match(/^\/flashcards\/sets\/[^\/]+$/) && method === 'DELETE') {
+        req.params.id = path.split('/')[3];
+        await deleteFlashcardSet(req, res);
+      } else if (path.match(/^\/flashcards\/sets\/[^\/]+\/cards$/) && method === 'POST') {
+        req.params.setId = path.split('/')[3];
+        await addFlashcard(req, res);
+      } else if (path.match(/^\/flashcards\/cards\/[^\/]+$/) && method === 'PUT') {
+        req.params.id = path.split('/')[3];
+        await updateFlashcard(req, res);
+      } else if (path.match(/^\/flashcards\/cards\/[^\/]+$/) && method === 'DELETE') {
+        req.params.id = path.split('/')[3];
+        await deleteFlashcard(req, res);
+      }
+      
       // Root route
       else if (path === '/' && method === 'GET') {
         res.json({
@@ -999,7 +1034,8 @@ export async function onRequest(context) {
             applications: '/api/applications',
             featured: '/api/featured',
             homework: '/api/homework',
-            mistakeChecks: '/api/mistake-checks'
+            mistakeChecks: '/api/mistake-checks',
+            flashcards: '/api/flashcards'
           }
         });
       }
