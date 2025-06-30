@@ -23,6 +23,7 @@ import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import featuredRoutes from './routes/featuredRoutes.js';
 import homeworkRoutes from './routes/homeworkRoutes.js';
 import mistakeCheckRoutes from './routes/mistakeCheckRoutes.js';
+import flashcardRoutes from './routes/flashcardRoutes.js';
 
 // Initialize app
 const app = express();
@@ -172,6 +173,7 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api', featuredRoutes);
 app.use('/api/homework', homeworkRoutes);
 app.use('/api/mistake-checks', mistakeCheckRoutes);
+app.use('/api/flashcards', flashcardRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -195,7 +197,8 @@ app.get('/', (req, res) => {
       subscriptions: '/api/subscriptions',
       featured: '/api/featured',
       homework: '/api/homework',
-      mistakeChecks: '/api/mistake-checks'
+      mistakeChecks: '/api/mistake-checks',
+      flashcards: '/api/flashcards'
     }
   });
 });
