@@ -18,6 +18,7 @@ const universityRoutes = require('./routes/universityRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const flashcardRoutes = require('./routes/flashcardRoutes');
+const studyPlannerRoutes = require('./routes/studyPlannerRoutes');
 
 // Initialize app
 const app = express();
@@ -166,6 +167,7 @@ app.use('/api/universities', universityRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/flashcards', flashcardRoutes);
+app.use('/api/study-planner', studyPlannerRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -186,7 +188,8 @@ app.get('/', (req, res) => {
       universities: '/api/universities',
       uploads: '/api/uploads',
       subscriptions: '/api/subscriptions',
-      flashcards: '/api/flashcards'
+      flashcards: '/api/flashcards',
+      studyPlanner: '/api/study-planner'
     }
   });
 });
