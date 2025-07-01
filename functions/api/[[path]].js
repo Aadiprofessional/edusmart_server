@@ -140,6 +140,35 @@ import {
   getContentStats
 } from '../../src/controllers/contentWriterController.js';
 import applicationController from '../../src/controllers/applicationController.js';
+import {
+  // Study Tasks
+  getUserStudyTasks,
+  getStudyTaskById,
+  createStudyTask,
+  updateStudyTask,
+  deleteStudyTask,
+  
+  // Applications
+  getUserApplications,
+  getApplicationById,
+  createApplication,
+  updateApplication,
+  deleteApplication,
+  
+  // Application Tasks
+  createApplicationTask,
+  updateApplicationTask,
+  deleteApplicationTask,
+  
+  // Reminders
+  getUserReminders,
+  createReminder,
+  updateReminder,
+  deleteReminder,
+  
+  // Dashboard
+  getDashboardStats
+} from '../../src/controllers/studyPlannerController.js';
 
 // Import auth middleware functions
 import { supabase } from '../../src/utils/supabase.js';
@@ -1064,9 +1093,76 @@ export async function onRequest(context) {
             homework: '/api/homework',
             mistakeChecks: '/api/mistake-checks',
             flashcards: '/api/flashcards',
-            contentWriter: '/api/content-writer'
+            contentWriter: '/api/content-writer',
+            studyPlanner: '/api/study-planner'
           }
         });
+      }
+      
+      // Study Planner routes
+      else if (path.match(/^\/study-planner\/users\/[^\/]+\/study-tasks$/) && method === 'GET') {
+        req.params.userId = path.split('/')[3];
+        await getUserStudyTasks(req, res);
+      } else if (path.match(/^\/study-planner\/study-tasks\/[^\/]+$/) && method === 'GET') {
+        req.params.id = path.split('/')[3];
+        await getStudyTaskById(req, res);
+      } else if (path === '/study-planner/study-tasks' && method === 'POST') {
+        await createStudyTask(req, res);
+      } else if (path.match(/^\/study-planner\/study-tasks\/[^\/]+$/) && method === 'PUT') {
+        req.params.id = path.split('/')[3];
+        await updateStudyTask(req, res);
+      } else if (path.match(/^\/study-planner\/study-tasks\/[^\/]+$/) && method === 'DELETE') {
+        req.params.id = path.split('/')[3];
+        await deleteStudyTask(req, res);
+      }
+      
+      // Study Planner - Applications routes
+      else if (path.match(/^\/study-planner\/users\/[^\/]+\/applications$/) && method === 'GET') {
+        req.params.userId = path.split('/')[3];
+        await getUserApplications(req, res);
+      } else if (path.match(/^\/study-planner\/applications\/[^\/]+$/) && method === 'GET') {
+        req.params.id = path.split('/')[3];
+        await getApplicationById(req, res);
+      } else if (path === '/study-planner/applications' && method === 'POST') {
+        await createApplication(req, res);
+      } else if (path.match(/^\/study-planner\/applications\/[^\/]+$/) && method === 'PUT') {
+        req.params.id = path.split('/')[3];
+        await updateApplication(req, res);
+      } else if (path.match(/^\/study-planner\/applications\/[^\/]+$/) && method === 'DELETE') {
+        req.params.id = path.split('/')[3];
+        await deleteApplication(req, res);
+      }
+      
+      // Study Planner - Application Tasks routes
+      else if (path.match(/^\/study-planner\/applications\/[^\/]+\/tasks$/) && method === 'POST') {
+        req.params.applicationId = path.split('/')[3];
+        await createApplicationTask(req, res);
+      } else if (path.match(/^\/study-planner\/application-tasks\/[^\/]+$/) && method === 'PUT') {
+        req.params.id = path.split('/')[3];
+        await updateApplicationTask(req, res);
+      } else if (path.match(/^\/study-planner\/application-tasks\/[^\/]+$/) && method === 'DELETE') {
+        req.params.id = path.split('/')[3];
+        await deleteApplicationTask(req, res);
+      }
+      
+      // Study Planner - Reminders routes
+      else if (path.match(/^\/study-planner\/users\/[^\/]+\/reminders$/) && method === 'GET') {
+        req.params.userId = path.split('/')[3];
+        await getUserReminders(req, res);
+      } else if (path === '/study-planner/reminders' && method === 'POST') {
+        await createReminder(req, res);
+      } else if (path.match(/^\/study-planner\/reminders\/[^\/]+$/) && method === 'PUT') {
+        req.params.id = path.split('/')[3];
+        await updateReminder(req, res);
+      } else if (path.match(/^\/study-planner\/reminders\/[^\/]+$/) && method === 'DELETE') {
+        req.params.id = path.split('/')[3];
+        await deleteReminder(req, res);
+      }
+      
+      // Study Planner - Dashboard routes
+      else if (path.match(/^\/study-planner\/users\/[^\/]+\/dashboard\/stats$/) && method === 'GET') {
+        req.params.userId = path.split('/')[3];
+        await getDashboardStats(req, res);
       }
       
       // Default route
