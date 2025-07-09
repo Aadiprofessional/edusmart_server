@@ -1,0 +1,42 @@
+{
+  "statefulConfig": {
+    "serviceName": "edusmart-service",
+    "description": "",
+    "role": "acs:ram::5939539157604809:role/aliyunfcdefaultrole",
+    "logConfig": {
+      "project": "",
+      "logstore": "",
+      "enableRequestMetrics": false,
+      "enableInstanceMetrics": false,
+      "logBeginRule": "None",
+      "enableCustomExtraLog": true
+    },
+    "serviceId": "39e4fae7-f517-4b9b-bc48-f5be8111c68d",
+    "createdTime": "2025-07-09T14:00:10Z",
+    "lastModifiedTime": "2025-07-09T18:20:47Z",
+    "vpcConfig": {
+      "vpcId": "",
+      "vSwitchIds": [],
+      "securityGroupId": "",
+      "role": null,
+      "anytunnelViaENI": null
+    },
+    "internetAccess": true,
+    "nasConfig": {
+      "userId": -1,
+      "groupId": -1,
+      "mountPoints": []
+    },
+    "ossMountConfig": {
+      "mountPoints": []
+    },
+    "vendorConfig": null,
+    "tracingConfig": {
+      "type": null,
+      "params": null,
+      "jaegerConfig": null
+    },
+    "useSLRAuthentication": false,
+    "name": "edusmart-service"
+  }
+}

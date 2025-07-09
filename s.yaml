@@ -6,20 +6,20 @@ services:
   edusmart-nodejs:
     component: fc
     props:
-      region: cn-hangzhou
+      region: cn-beijing
       service:
         name: edusmart-service
         internetAccess: true
-        logConfig:
-          project: edusmart-log-project        
-          logstore: edusmart-log-project 
       function:
         name: edusmart-api
         runtime: nodejs18
         codeUri: ./
         handler: handler.handler
         memorySize: 1024
-        timeout: 300
+        timeout: 600
+        asyncConfiguration:
+          maxAsyncEventAge: 3600
+          maxAsyncRetryAttempts: 1
         environmentVariables:
           SUPABASE_URL: https://cdqrmxmqsoxncnkxiqwu.supabase.co
           SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkcXJteG1xc294bmNua3hpcXd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NTM2MzgsImV4cCI6MjA1OTMyOTYzOH0.1mhLCVfTJ6BjczuVX0Zs7qqqnMBXDiP46PatouMTGMg

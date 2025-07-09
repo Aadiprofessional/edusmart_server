@@ -1,0 +1,59 @@
+{
+  "statefulConfig": {
+    "functionId": "6f70bcbc-d59c-4d6a-9a3a-7d9c8ac90d16",
+    "functionName": "edusmart-api",
+    "description": "This is default function description by fc-deploy component",
+    "runtime": "nodejs18",
+    "handler": "handler.handler",
+    "timeout": 600,
+    "initializer": "",
+    "initializationTimeout": 3,
+    "codeSize": 6352221,
+    "codeChecksum": "11742384069033743710",
+    "memorySize": 1024,
+    "gpuMemorySize": null,
+    "environmentVariables": {
+      "JWT_SECRET": "P8sG4xe6FfDrMEFJhX0g2zRLIykNtEnVcUxQjylt0lUU6K6bchpT39AQNpesdtNnspEOX+AD7UHEOtb0tHJ77A==",
+      "NODE_ENV": "production",
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkcXJteG1xc294bmNua3hpcXd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NTM2MzgsImV4cCI6MjA1OTMyOTYzOH0.1mhLCVfTJ6BjczuVX0Zs7qqqnMBXDiP46PatouMTGMg",
+      "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkcXJteG1xc294bmNua3hpcXd1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0Mzc1MzYzOCwiZXhwIjoyMDU5MzI5NjM4fQ.1mhLCVfTJ6BjczuVX0Zs7qqqnMBXDiP46PatouMTGMg",
+      "SUPABASE_URL": "https://cdqrmxmqsoxncnkxiqwu.supabase.co"
+    },
+    "createdTime": "2025-07-09T18:20:47Z",
+    "lastModifiedTime": "2025-07-09T18:20:47Z",
+    "instanceConcurrency": 1,
+    "instanceSoftConcurrency": null,
+    "customContainerConfig": null,
+    "caPort": null,
+    "instanceType": "e1",
+    "layers": null,
+    "layersArnV2": null,
+    "instanceLifecycleConfig": {
+      "preFreeze": {
+        "handler": "",
+        "timeout": 3,
+        "command": null
+      },
+      "preStop": {
+        "handler": "",
+        "timeout": 3,
+        "command": null
+      }
+    },
+    "customDNS": null,
+    "customRuntimeConfig": null,
+    "customHealthCheckConfig": null,
+    "sessionAffinity": null,
+    "initializerCommand": null,
+    "name": "edusmart-api",
+    "asyncConfiguration": {
+      "destinationConfig": {
+        "onSuccess": null,
+        "onFailure": null
+      },
+      "maxAsyncEventAgeInSeconds": null,
+      "statefulInvocation": null,
+      "maxAsyncRetryAttempts": 1
+    }
+  }
+}
