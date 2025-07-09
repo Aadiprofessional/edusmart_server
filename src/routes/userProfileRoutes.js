@@ -1,13 +1,13 @@
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import {
+const {
   createOrUpdateProfile,
   getUserProfile,
   updateProfileFields,
   deleteUserProfile,
   getProfileCompletion
-} from '../controllers/userProfileController.js';
-import { authenticateUser } from '../middlewares/auth.js';
+} = require('../controllers/userProfileController');
+const { authenticateUser } = require('../middlewares/auth');
 
 // All routes require authentication
 router.use(authenticateUser);
@@ -30,4 +30,4 @@ router.delete('/profile', deleteUserProfile);
 // Get profile completion percentage
 router.get('/profile/completion', getProfileCompletion);
 
-export default router; 
+module.exports = router; 

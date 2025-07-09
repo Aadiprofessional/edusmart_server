@@ -1,6 +1,6 @@
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import {
+const {
   getUserFlashcardSets,
   getFlashcardSetById,
   createFlashcardSet,
@@ -9,7 +9,7 @@ import {
   addFlashcard,
   updateFlashcard,
   deleteFlashcard
-} from '../controllers/flashcardController.js';
+} = require('../controllers/flashcardController');
 
 // Flashcard Sets Routes
 router.get('/sets', getUserFlashcardSets);
@@ -23,4 +23,4 @@ router.post('/sets/:setId/cards', addFlashcard);
 router.put('/cards/:id', updateFlashcard);
 router.delete('/cards/:id', deleteFlashcard);
 
-export default router; 
+module.exports = router; 

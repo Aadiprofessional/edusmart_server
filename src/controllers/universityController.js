@@ -1,5 +1,5 @@
-import { supabase, supabaseAdmin } from '../utils/supabase.js';
-import { v4 as uuidv4 } from 'uuid';
+const { supabase, supabaseAdmin } = require('../utils/supabase');
+const { v4: uuidv4 } = require('uuid');
 
 // Helper function to generate unique slug
 const generateUniqueSlug = async (name) => {
@@ -615,7 +615,7 @@ const getUniversityCountries = async (req, res) => {
   }
 };
 
-export {
+module.exports = {
   getAllUniversities,
   getUniversityById,
   createUniversity,

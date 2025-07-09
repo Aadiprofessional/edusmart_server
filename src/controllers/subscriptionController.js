@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../utils/supabase.js';
+const { supabaseAdmin } = require('../utils/supabase');
 
 // Get all subscription plans
 const getSubscriptionPlans = async (req, res) => {
@@ -784,7 +784,7 @@ const refreshResponses = async (req, res) => {
   }
 };
 
-export {
+module.exports = {
   getSubscriptionPlans,
   getAddonPlans,
   buySubscription,

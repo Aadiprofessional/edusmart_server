@@ -1,4 +1,4 @@
-import { body, validationResult } from 'express-validator';
+const { body, validationResult } = require('express-validator');
 
 // Validation result middleware
 const validateRequest = (req, res, next) => {
@@ -727,7 +727,7 @@ const caseStudyValidationRules = [
   validateRequest
 ];
 
-export {
+module.exports = {
   validateRequest,
   blogValidationRules,
   courseValidationRules,

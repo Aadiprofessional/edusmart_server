@@ -1,17 +1,16 @@
 {
-  "name": "edusmart_server",
+  "name": "edusmart-api",
   "version": "1.0.0",
-  "type": "module",
-  "main": "functions/api/[[path]].js",
+  "main": "handler.js",
   "scripts": {
-    "start": "node src/app-esm.js",
-    "dev": "nodemon src/app-esm.js",
+    "start": "node app.js",
+    "dev": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Serverless API for EduSmart application",
+  "description": "Serverless API for EduSmart application on Alibaba Cloud",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
     "axios": "^1.6.0",

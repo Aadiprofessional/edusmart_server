@@ -1,6 +1,6 @@
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import {
+const {
   // Course management
   getCourses,
   getCourseById,
@@ -38,10 +38,10 @@ import {
   
   // AI Video Summary
   generateVideoSummary
-} from '../controllers/enhancedCourseController.js';
+} = require('../controllers/enhancedCourseController');
 
-import { checkAdminByUid } from '../middlewares/auth.js';
-import { courseValidationRules } from '../middlewares/validators.js';
+const { checkAdminByUid } = require('../middlewares/auth');
+const { courseValidationRules } = require('../middlewares/validators');
 
 // =============================================
 // PUBLIC ROUTES (No authentication required)
@@ -145,4 +145,4 @@ router.post('/generate-video-summary', generateVideoSummary);
 // User enrollments
 router.get('/users/:userId/enrollments', getUserEnrollments);
 
-export default router; 
+module.exports = router; 

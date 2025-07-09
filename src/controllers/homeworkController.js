@@ -1,5 +1,5 @@
-import { supabaseAdmin } from '../utils/supabase.js';
-import { v4 as uuidv4 } from 'uuid';
+const { supabaseAdmin } = require('../utils/supabase');
+const { v4: uuidv4 } = require('uuid');
 
 // Get Supabase admin client
 const getSupabaseAdmin = () => supabaseAdmin();
@@ -47,7 +47,7 @@ async function handleHomeworkFileUpload(file, uid) {
 }
 
 // Submit homework
-export async function submitHomework(req) {
+const submitHomework = async (req) => {
   try {
     console.log('📝 Homework submission request received');
     
@@ -197,10 +197,10 @@ export async function submitHomework(req) {
       }
     };
   }
-}
+};
 
 // Get homework history
-export async function getHomeworkHistory(uid, query) {
+const getHomeworkHistory = async (uid, query) => {
   try {
     console.log('📚 Fetching homework history');
     const limit = query.limit || 20;
@@ -262,10 +262,10 @@ export async function getHomeworkHistory(uid, query) {
       }
     };
   }
-}
+};
 
 // Update homework
-export async function updateHomework(id, body) {
+const updateHomework = async (id, body) => {
   try {
     const { solution, page_solutions, current_page, processing_complete } = body;
 
@@ -325,10 +325,10 @@ export async function updateHomework(id, body) {
     console.error('Update homework error:', error);
     return { status: 500, data: { error: 'Failed to update homework' } };
   }
-}
+};
 
 // Delete homework
-export async function deleteHomework(id, uid) {
+const deleteHomework = async (id, uid) => {
   try {
     if (!id || !uid) {
       return { status: 400, data: { error: 'Homework ID and User ID are required' } };
@@ -388,10 +388,10 @@ export async function deleteHomework(id, uid) {
     console.error('Delete homework error:', error);
     return { status: 500, data: { error: 'Failed to delete homework' } };
   }
-}
+};
 
 // Get homework by ID
-export async function getHomeworkById(id, uid) {
+const getHomeworkById = async (id, uid) => {
   try {
     if (!id || !uid) {
       return { status: 400, data: { error: 'Homework ID and User ID are required' } };
@@ -441,4 +441,12 @@ export async function getHomeworkById(id, uid) {
     console.error('Get homework error:', error);
     return { status: 500, data: { error: 'Failed to fetch homework' } };
   }
-} 
+};
+
+module.exports = {
+  submitHomework,
+  getHomeworkHistory,
+  updateHomework,
+  deleteHomework,
+  getHomeworkById
+}; 

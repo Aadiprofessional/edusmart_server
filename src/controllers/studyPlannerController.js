@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from '../utils/supabase.js';
+const { supabase, supabaseAdmin } = require('../utils/supabase');
 
 // ============= STUDY TASKS =============
 
@@ -926,7 +926,7 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
-export {
+module.exports = {
   // Study Tasks
   getUserStudyTasks,
   getStudyTaskById,

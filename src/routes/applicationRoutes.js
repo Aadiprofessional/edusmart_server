@@ -1,4 +1,4 @@
-import express from 'express';
+const express = require('express');
 const router = express.Router();
 import applicationController from '../controllers/applicationController.js';
 
@@ -26,4 +26,4 @@ router.delete('/:id', applicationController.deleteApplication);
 // Update application status
 router.patch('/:id/status', applicationController.updateApplicationStatus);
 
-export default router; 
+module.exports = router; 

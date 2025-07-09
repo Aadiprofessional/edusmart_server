@@ -1,12 +1,12 @@
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import { 
+const { 
   getAllFeaturedItems,
   getFeaturedItemsByType
-} from '../controllers/featuredController.js';
+} = require('../controllers/featuredController');
 
 // Public routes
 router.get('/featured', getAllFeaturedItems);
 router.get('/featured/:type', getFeaturedItemsByType);
 
-export default router; 
+module.exports = router; 

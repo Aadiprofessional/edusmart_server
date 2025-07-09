@@ -1,16 +1,16 @@
-import express from 'express';
-import multer from 'multer';
-import { supabaseAdmin } from '../utils/supabase.js';
-import { v4 as uuidv4 } from 'uuid';
-import { 
+const express = require('express');
+const multer = require('multer');
+const { supabaseAdmin } = require('../utils/supabase');
+const { v4: uuidv4 } = require('uuid');
+const router = express.Router();
+
+const {
   submitHomework,
   getHomeworkHistory,
   updateHomework,
   deleteHomework,
   getHomeworkById
-} from '../controllers/homeworkController.js';
-
-const router = express.Router();
+} = require('../controllers/homeworkController');
 
 // Get Supabase admin client
 const getSupabaseAdmin = () => supabaseAdmin();
@@ -147,4 +147,4 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-export default router; 
+module.exports = router; 

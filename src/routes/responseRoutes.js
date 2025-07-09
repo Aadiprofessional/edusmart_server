@@ -1,6 +1,6 @@
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import { 
+const { 
   getResponses, 
   getResponseById, 
   createResponse, 
@@ -8,9 +8,9 @@ import {
   deleteResponse,
   getResponseCategories,
   getResponseTypes
-} from '../controllers/responseController.js';
-import { checkAdminByUid } from '../middlewares/auth.js';
-import { responseValidationRules } from '../middlewares/validators.js';
+} = require('../controllers/responseController');
+const { checkAdminByUid } = require('../middlewares/auth');
+const { responseValidationRules } = require('../middlewares/validators');
 
 // Public routes
 router.get('/responses', getResponses);
@@ -23,4 +23,4 @@ router.post('/responses', checkAdminByUid, responseValidationRules, createRespon
 router.put('/responses/:id', checkAdminByUid, updateResponse);
 router.delete('/responses/:id', checkAdminByUid, deleteResponse);
 
-export default router; 
+module.exports = router; 

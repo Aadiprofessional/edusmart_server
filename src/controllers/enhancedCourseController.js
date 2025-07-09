@@ -1,5 +1,5 @@
-import { supabase, supabaseAdmin } from '../utils/supabase.js';
-import { v4 as uuidv4 } from 'uuid';
+const { supabase, supabaseAdmin } = require('../utils/supabase');
+const { v4: uuidv4 } = require('uuid');
 
 // =============================================
 // COURSE MANAGEMENT
@@ -1236,7 +1236,7 @@ const getCourseStatistics = async (req, res) => {
   }
 };
 
-export {
+module.exports = {
   // Course management
   getCourses,
   getCourseById,

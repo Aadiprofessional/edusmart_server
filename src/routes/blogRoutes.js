@@ -1,6 +1,6 @@
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import { 
+const { 
   getBlogs, 
   getBlogById, 
   createBlog, 
@@ -8,9 +8,9 @@ import {
   deleteBlog,
   getBlogCategories,
   getBlogTags
-} from '../controllers/blogController.js';
-import { checkAdminByUid } from '../middlewares/auth.js';
-import { blogValidationRules } from '../middlewares/validators.js';
+} = require('../controllers/blogController');
+const { checkAdminByUid } = require('../middlewares/auth');
+const { blogValidationRules } = require('../middlewares/validators');
 
 // Public routes
 router.get('/blogs', getBlogs);
@@ -23,4 +23,4 @@ router.post('/blogs', checkAdminByUid, blogValidationRules, createBlog);
 router.put('/blogs/:id', checkAdminByUid, updateBlog);
 router.delete('/blogs/:id', checkAdminByUid, deleteBlog);
 
-export default router; 
+module.exports = router; 

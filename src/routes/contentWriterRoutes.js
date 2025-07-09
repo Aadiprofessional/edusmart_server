@@ -1,14 +1,13 @@
-import express from 'express';
-import {
+const express = require('express');
+const router = express.Router();
+const {
   saveContent,
   getContentHistory,
   getContentById,
   updateContent,
   deleteContent,
   getContentStats
-} from '../controllers/contentWriterController.js';
-
-const router = express.Router();
+} = require('../controllers/contentWriterController');
 
 // Save generated content
 router.post('/save', saveContent);
@@ -28,4 +27,4 @@ router.delete('/:id', deleteContent);
 // Get content statistics for a user
 router.get('/stats/:uid', getContentStats);
 
-export default router; 
+module.exports = router; 

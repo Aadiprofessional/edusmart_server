@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from '../utils/supabase.js';
+const { supabase, supabaseAdmin } = require('../utils/supabase');
 
 // Get all applications
 const getAllApplications = async (req, res) => {
@@ -278,4 +278,4 @@ const applicationController = {
   getApplicationsByStatus
 };
 
-export default applicationController; 
+module.exports = applicationController; 

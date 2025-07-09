@@ -1,4 +1,4 @@
-import { supabase } from '../utils/supabase.js';
+const { supabase } = require('../utils/supabase');
 
 // Get all featured items from all tables
 const getAllFeaturedItems = async (req, res) => {
@@ -216,7 +216,7 @@ const getFeaturedItemsByType = async (req, res) => {
   }
 };
 
-export {
+module.exports = {
   getAllFeaturedItems,
   getFeaturedItemsByType
 }; 

@@ -1,8 +1,8 @@
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import { register, login, getProfile, logout, refreshToken } from '../controllers/authController.js';
-import { authenticateUser } from '../middlewares/auth.js';
-import { profileValidationRules } from '../middlewares/validators.js';
+const { register, login, getProfile, logout, refreshToken } = require('../controllers/authController');
+const { authenticateUser } = require('../middlewares/auth');
+const { profileValidationRules } = require('../middlewares/validators');
 
 // Register a new user
 router.post('/register', register);
@@ -19,4 +19,4 @@ router.post('/logout', logout);
 // Refresh token
 router.post('/refresh', refreshToken);
 
-export default router; 
+module.exports = router; 

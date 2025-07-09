@@ -1,34 +1,27 @@
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import {
-  // Study Tasks
+
+// Import all controllers
+const {
   getUserStudyTasks,
   getStudyTaskById,
   createStudyTask,
   updateStudyTask,
   deleteStudyTask,
-  
-  // Applications
   getUserApplications,
   getApplicationById,
   createApplication,
   updateApplication,
   deleteApplication,
-  
-  // Application Tasks
   createApplicationTask,
   updateApplicationTask,
   deleteApplicationTask,
-  
-  // Reminders
   getUserReminders,
   createReminder,
   updateReminder,
   deleteReminder,
-  
-  // Dashboard
   getDashboardStats
-} from '../controllers/studyPlannerController.js';
+} = require('../controllers/studyPlannerController');
 
 // ============= STUDY TASKS ROUTES =============
 
@@ -94,4 +87,4 @@ router.delete('/reminders/:id', deleteReminder);
 // Get dashboard statistics
 router.get('/users/:userId/dashboard/stats', getDashboardStats);
 
-export default router; 
+module.exports = router; 

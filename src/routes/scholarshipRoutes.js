@@ -1,6 +1,6 @@
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import { 
+const { 
   getScholarships, 
   getScholarshipById, 
   createScholarship, 
@@ -8,9 +8,9 @@ import {
   deleteScholarship,
   getScholarshipCountries,
   getScholarshipUniversities
-} from '../controllers/scholarshipController.js';
-import { checkAdminByUid } from '../middlewares/auth.js';
-import { scholarshipValidationRules } from '../middlewares/validators.js';
+} = require('../controllers/scholarshipController');
+const { checkAdminByUid } = require('../middlewares/auth');
+const { scholarshipValidationRules } = require('../middlewares/validators');
 
 // Public routes
 router.get('/scholarships', getScholarships);
@@ -23,4 +23,4 @@ router.post('/scholarships', checkAdminByUid, scholarshipValidationRules, create
 router.put('/scholarships/:id', checkAdminByUid, updateScholarship);
 router.delete('/scholarships/:id', checkAdminByUid, deleteScholarship);
 
-export default router; 
+module.exports = router; 

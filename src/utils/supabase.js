@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 // Create clients dynamically to avoid process not defined error
 let supabase = null;
@@ -27,4 +27,4 @@ function getSupabaseAdmin() {
   return supabaseAdmin;
 }
 
-export { getSupabase as supabase, getSupabaseAdmin as supabaseAdmin }; 
+module.exports = { supabase: getSupabase, supabaseAdmin: getSupabaseAdmin }; 

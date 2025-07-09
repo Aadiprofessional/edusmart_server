@@ -1,5 +1,5 @@
-import { supabaseAdmin } from '../utils/supabase.js';
-import { v4 as uuidv4 } from 'uuid';
+const { supabaseAdmin } = require('../utils/supabase');
+const { v4: uuidv4 } = require('uuid');
 
 // Get Supabase admin client
 const getSupabaseAdmin = () => supabaseAdmin();
@@ -73,7 +73,7 @@ async function handleMistakeCheckFileUpload(file, uid) {
 }
 
 // Submit mistake check
-export async function submitMistakeCheck(req) {
+const submitMistakeCheck = async (req) => {
   try {
     console.log('🔍 Mistake check submission request received');
     
@@ -279,10 +279,10 @@ export async function submitMistakeCheck(req) {
       }
     };
   }
-}
+};
 
 // Get mistake check history
-export async function getMistakeCheckHistory(uid, query) {
+const getMistakeCheckHistory = async (uid, query) => {
   try {
     console.log('📚 Fetching mistake check history');
     const limit = query.limit || 20;
@@ -349,10 +349,10 @@ export async function getMistakeCheckHistory(uid, query) {
       }
     };
   }
-}
+};
 
 // Update mistake check
-export async function updateMistakeCheck(id, body) {
+const updateMistakeCheck = async (id, body) => {
   try {
     const { 
       text, 
@@ -450,10 +450,10 @@ export async function updateMistakeCheck(id, body) {
     console.error('Update mistake check error:', error);
     return { status: 500, data: { error: 'Failed to update mistake check' } };
   }
-}
+};
 
 // Delete mistake check
-export async function deleteMistakeCheck(id, uid) {
+const deleteMistakeCheck = async (id, uid) => {
   try {
     if (!id || !uid) {
       return { status: 400, data: { error: 'Mistake check ID and User ID are required' } };
@@ -513,10 +513,10 @@ export async function deleteMistakeCheck(id, uid) {
     console.error('Delete mistake check error:', error);
     return { status: 500, data: { error: 'Failed to delete mistake check' } };
   }
-}
+};
 
 // Get mistake check by ID
-export async function getMistakeCheckById(id, uid) {
+const getMistakeCheckById = async (id, uid) => {
   try {
     if (!id || !uid) {
       return { status: 400, data: { error: 'Mistake check ID and User ID are required' } };
@@ -571,4 +571,12 @@ export async function getMistakeCheckById(id, uid) {
     console.error('Get mistake check error:', error);
     return { status: 500, data: { error: 'Failed to fetch mistake check' } };
   }
-} 
+};
+
+module.exports = {
+  submitMistakeCheck,
+  getMistakeCheckHistory,
+  updateMistakeCheck,
+  deleteMistakeCheck,
+  getMistakeCheckById
+}; 

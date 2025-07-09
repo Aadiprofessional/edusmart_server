@@ -1,6 +1,6 @@
-import express from 'express';
+const express = require('express');
 const router = express.Router();
-import { 
+const { 
   getCourses, 
   getCourseById, 
   createCourse, 
@@ -8,9 +8,9 @@ import {
   deleteCourse,
   getCourseCategories,
   getCourseLevels
-} from '../controllers/courseController.js';
-import { checkAdminByUid } from '../middlewares/auth.js';
-import { courseValidationRules } from '../middlewares/validators.js';
+} = require('../controllers/courseController');
+const { checkAdminByUid } = require('../middlewares/auth');
+const { courseValidationRules } = require('../middlewares/validators');
 
 // Public routes
 router.get('/courses', getCourses);
@@ -23,4 +23,4 @@ router.post('/courses', checkAdminByUid, courseValidationRules, createCourse);
 router.put('/courses/:id', checkAdminByUid, updateCourse);
 router.delete('/courses/:id', checkAdminByUid, deleteCourse);
 
-export default router; 
+module.exports = router; 

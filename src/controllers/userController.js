@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../utils/supabase.js';
+const { supabaseAdmin } = require('../utils/supabase');
 
 // Get all users
 const getAllUsers = async (req, res) => {
@@ -167,7 +167,7 @@ const getUserStats = async (req, res) => {
   }
 };
 
-export {
+module.exports = {
   getAllUsers,
   getUserById,
   updateUser,

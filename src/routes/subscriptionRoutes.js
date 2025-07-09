@@ -1,5 +1,6 @@
-import express from 'express';
-import {
+const express = require('express');
+const router = express.Router();
+const { 
   getSubscriptionPlans,
   getAddonPlans,
   buySubscription,
@@ -11,10 +12,8 @@ import {
   getUsageLogs,
   getAllSubscriptions,
   refreshResponses
-} from '../controllers/subscriptionController.js';
-import { authenticateUser, authenticateUserWithProfile } from '../middlewares/auth.js';
-
-const router = express.Router();
+} = require('../controllers/subscriptionController');
+const { authenticateUser, authenticateUserWithProfile } = require('../middlewares/auth');
 
 // Public routes (no authentication required)
 router.get('/plans', getSubscriptionPlans);
@@ -33,4 +32,4 @@ router.get('/usage-logs', authenticateUser, getUsageLogs);
 router.get('/admin/all', authenticateUserWithProfile, getAllSubscriptions);
 router.post('/admin/refresh-responses', authenticateUserWithProfile, refreshResponses);
 
-export default router; 
+module.exports = router; 

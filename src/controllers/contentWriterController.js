@@ -1,5 +1,5 @@
-import { supabase, supabaseAdmin } from '../utils/supabase.js';
-import { v4 as uuidv4 } from 'uuid';
+const { supabase, supabaseAdmin } = require('../utils/supabase');
+const { v4: uuidv4 } = require('uuid');
 
 // Save generated content
 const saveContent = async (req, res) => {
@@ -359,7 +359,7 @@ const getContentStats = async (req, res) => {
   }
 };
 
-export {
+module.exports = {
   saveContent,
   getContentHistory,
   getContentById,

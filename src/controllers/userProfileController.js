@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../utils/supabase.js';
+const { supabaseAdmin } = require('../utils/supabase');
 
 // Calculate profile completion percentage based on actual database fields
 const calculateProfileCompletion = (profile) => {
@@ -370,7 +370,7 @@ const getProfileCompletion = async (req, res) => {
   }
 };
 
-export {
+module.exports = {
   createOrUpdateProfile,
   getUserProfile,
   updateProfileFields,

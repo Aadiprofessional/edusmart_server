@@ -1,5 +1,5 @@
-import { supabase, supabaseAdmin } from '../utils/supabase.js';
-import { v4 as uuidv4 } from 'uuid';
+const { supabase, supabaseAdmin } = require('../utils/supabase');
+const { v4: uuidv4 } = require('uuid');
 
 // Get all flashcard sets for a user
 const getUserFlashcardSets = async (req, res) => {
@@ -499,7 +499,7 @@ const deleteFlashcard = async (req, res) => {
   }
 };
 
-export {
+module.exports = {
   getUserFlashcardSets,
   getFlashcardSetById,
   createFlashcardSet,
