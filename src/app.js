@@ -19,6 +19,8 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const flashcardRoutes = require('./routes/flashcardRoutes');
 const studyPlannerRoutes = require('./routes/studyPlannerRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const documentSummarizerRoutes = require('./routes/documentSummarizerRoutes');
 
 // Initialize app
 const app = express();
@@ -42,6 +44,7 @@ const corsOptions = {
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       'http://127.0.0.1:3002',
+      'https://matrixedu.ai',
       // Add your production frontend URLs here
       'https://edusmart-admin.vercel.app',
       'https://edusmart-frontend.vercel.app',
@@ -116,14 +119,9 @@ app.use((req, res, next) => {
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       'http://127.0.0.1:3002',
-      'https://edusmart-admin.vercel.app',
-      'https://edusmart-frontend.vercel.app',
-      'https://edusmart.vercel.app',
-      'https://edusmart-admin.pages.dev',
-      'https://edusmart-9z4.pages.dev',
-      // Add Cloudflare Workers domains
-      'https://edusmart-api.your-subdomain.workers.dev',
-      'https://edusmart-api-production.your-subdomain.workers.dev',
+      'https://matrixedu.ai',
+      
+     
     ];
     
     const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
@@ -168,6 +166,8 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/flashcards', flashcardRoutes);
 app.use('/api/study-planner', studyPlannerRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/document-summarizer', documentSummarizerRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -189,7 +189,9 @@ app.get('/', (req, res) => {
       uploads: '/api/uploads',
       subscriptions: '/api/subscriptions',
       flashcards: '/api/flashcards',
-      studyPlanner: '/api/study-planner'
+      studyPlanner: '/api/study-planner',
+      payments: '/api/payment',
+      documentSummarizer: '/api/document-summarizer'
     }
   });
 });

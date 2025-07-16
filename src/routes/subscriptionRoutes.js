@@ -11,7 +11,9 @@ const {
   getTransactionHistory,
   getUsageLogs,
   getAllSubscriptions,
-  refreshResponses
+  refreshResponses,
+  createSubscriptionPayment,
+  createAddonPayment
 } = require('../controllers/subscriptionController');
 const { authenticateUser, authenticateUserWithProfile } = require('../middlewares/auth');
 
@@ -22,6 +24,10 @@ router.get('/addons', getAddonPlans);
 // User routes (authentication required)
 router.post('/buy', authenticateUser, buySubscription);
 router.post('/buy-addon', authenticateUser, buyAddon);
+
+// Antom payment routes (authentication required)
+router.post('/payment/subscription', authenticateUser, createSubscriptionPayment);
+router.post('/payment/addon', authenticateUser, createAddonPayment);
 router.get('/status', authenticateUser, getUserSubscription);
 router.post('/use-response', authenticateUser, useResponse);
 router.get('/responses', authenticateUser, getResponseHistory);

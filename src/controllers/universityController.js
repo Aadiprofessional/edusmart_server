@@ -36,7 +36,7 @@ const getAllUniversities = async (req, res) => {
   try {
     const { 
       page = 1, 
-      limit = 10, 
+      limit = 1000, 
       country, 
       search, 
       region,
@@ -534,12 +534,14 @@ const deleteUniversity = async (req, res) => {
 const getUniversitiesByCountry = async (req, res) => {
   try {
     const { country } = req.params;
+    const { limit = 1000 } = req.query;
 
     const { data: universities, error } = await supabase()
       .from('universities')
       .select('*')
       .eq('country', country)
-      .order('name', { ascending: true });
+      .order('name', { ascending: true })
+      .limit(limit);
 
     if (error) {
       console.error('Error fetching universities by country:', error);
@@ -557,7 +559,7 @@ const getUniversitiesByCountry = async (req, res) => {
 const searchUniversities = async (req, res) => {
   try {
     const { query } = req.params;
-    const { country, minRanking, maxTuition } = req.query;
+    const { country, minRanking, maxTuition, limit = 1000 } = req.query;
 
     let searchQuery = supabase()
       .from('universities')
@@ -578,7 +580,8 @@ const searchUniversities = async (req, res) => {
     }
 
     const { data: universities, error } = await searchQuery
-      .order('ranking', { ascending: true });
+      .order('ranking', { ascending: true })
+      .limit(limit);
 
     if (error) {
       console.error('Error searching universities:', error);

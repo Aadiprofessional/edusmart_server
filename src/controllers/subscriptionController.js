@@ -1,4 +1,7 @@
 const { supabaseAdmin } = require('../utils/supabase');
+const AntomPaymentService = require('../services/antomPaymentService');
+
+const antomService = new AntomPaymentService();
 
 // Get all subscription plans
 const getSubscriptionPlans = async (req, res) => {
@@ -784,6 +787,252 @@ const refreshResponses = async (req, res) => {
   }
 };
 
+// =============================================
+// ANTOM PAYMENT INTEGRATION METHODS
+// =============================================
+
+// Create payment for subscription with Antom
+const createSubscriptionPayment = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const {
+      planId,
+      currency = 'USD',
+      paymentMethodType = 'CARD',
+      terminalType = 'WEB',
+      redirectUrl,
+      notifyUrl
+    } = req.body;
+
+    if (!planId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Plan ID is required'
+      });
+    }
+
+    // Get the subscription plan
+    const { data: plan, error: planError } = await supabaseAdmin()
+      .from('subscription_plans')
+      .select('*')
+      .eq('id', planId)
+      .eq('is_active', true)
+      .single();
+
+    if (planError || !plan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription plan not found'
+      });
+    }
+
+    // Check if user already has an active subscription
+    const { data: existingSubscription } = await supabaseAdmin()
+      .from('user_subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single();
+
+    if (existingSubscription) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already has an active subscription'
+      });
+    }
+
+    // Create payment with Antom
+    const paymentData = {
+      amount: parseFloat(plan.price),
+      currency,
+      paymentMethodType,
+      terminalType,
+      orderDescription: `Subscription: ${plan.name}`,
+      userId: userId,
+      notifyUrl: notifyUrl || `${process.env.BASE_URL || 'http://localhost:3000'}/api/antom/notify`,
+      redirectUrl: redirectUrl || `${process.env.BASE_URL || 'http://localhost:3000'}/payment/success`
+    };
+
+    console.log('Creating Antom payment for subscription:', paymentData);
+
+    const paymentResult = await antomService.createPayment(paymentData);
+
+    if (!paymentResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create payment',
+        error: paymentResult.error
+      });
+    }
+
+    // Store payment information in database
+    const { data: paymentRecord, error: paymentError } = await supabaseAdmin()
+      .from('payment_transactions')
+      .insert([{
+        user_id: userId,
+        plan_id: planId,
+        addon_id: null,
+        payment_request_id: paymentResult.paymentRequestId,
+        order_id: paymentResult.orderId,
+        amount: parseFloat(plan.price),
+        currency: currency,
+        payment_method_type: paymentMethodType,
+        status: 'pending',
+        payment_data: paymentResult.data,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (paymentError) {
+      console.error('Error storing payment record:', paymentError);
+      // Continue anyway, as the payment was created with Antom
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Payment created successfully',
+      data: {
+        paymentRequestId: paymentResult.paymentRequestId,
+        orderId: paymentResult.orderId,
+        paymentUrl: paymentResult.data?.redirectActionForm?.redirectUrl,
+        normalUrl: paymentResult.data?.normalUrl,
+        plan: plan,
+        paymentResponse: paymentResult.data
+      }
+    });
+
+  } catch (error) {
+    console.error('Error creating subscription payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create subscription payment',
+      error: error.message
+    });
+  }
+};
+
+// Create payment for addon with Antom
+const createAddonPayment = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const {
+      addonId,
+      currency = 'USD',
+      paymentMethodType = 'CARD',
+      terminalType = 'WEB',
+      redirectUrl,
+      notifyUrl
+    } = req.body;
+
+    if (!addonId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Addon ID is required'
+      });
+    }
+
+    // Check if user has an active subscription
+    const { data: activeSubscription, error: subscriptionError } = await supabaseAdmin()
+      .from('user_subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single();
+
+    if (subscriptionError || !activeSubscription) {
+      return res.status(400).json({
+        success: false,
+        message: 'Active subscription required to purchase addons'
+      });
+    }
+
+    // Get the addon plan
+    const { data: addon, error: addonError } = await supabaseAdmin()
+      .from('addon_plans')
+      .select('*')
+      .eq('id', addonId)
+      .eq('is_active', true)
+      .single();
+
+    if (addonError || !addon) {
+      return res.status(404).json({
+        success: false,
+        message: 'Addon plan not found'
+      });
+    }
+
+    // Create payment with Antom
+    const paymentData = {
+      amount: parseFloat(addon.price),
+      currency,
+      paymentMethodType,
+      terminalType,
+      orderDescription: `Addon: ${addon.name}`,
+      userId: userId,
+      notifyUrl: notifyUrl || `${process.env.BASE_URL || 'http://localhost:3000'}/api/antom/notify`,
+      redirectUrl: redirectUrl || `${process.env.BASE_URL || 'http://localhost:3000'}/payment/success`
+    };
+
+    console.log('Creating Antom payment for addon:', paymentData);
+
+    const paymentResult = await antomService.createPayment(paymentData);
+
+    if (!paymentResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create payment',
+        error: paymentResult.error
+      });
+    }
+
+    // Store payment information in database
+    const { data: paymentRecord, error: paymentError } = await supabaseAdmin()
+      .from('payment_transactions')
+      .insert([{
+        user_id: userId,
+        plan_id: null,
+        addon_id: addonId,
+        payment_request_id: paymentResult.paymentRequestId,
+        order_id: paymentResult.orderId,
+        amount: parseFloat(addon.price),
+        currency: currency,
+        payment_method_type: paymentMethodType,
+        status: 'pending',
+        payment_data: paymentResult.data,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (paymentError) {
+      console.error('Error storing payment record:', paymentError);
+      // Continue anyway, as the payment was created with Antom
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Payment created successfully',
+      data: {
+        paymentRequestId: paymentResult.paymentRequestId,
+        orderId: paymentResult.orderId,
+        paymentUrl: paymentResult.data?.redirectActionForm?.redirectUrl,
+        normalUrl: paymentResult.data?.normalUrl,
+        addon: addon,
+        paymentResponse: paymentResult.data
+      }
+    });
+
+  } catch (error) {
+    console.error('Error creating addon payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create addon payment',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getSubscriptionPlans,
   getAddonPlans,
@@ -795,5 +1044,7 @@ module.exports = {
   getTransactionHistory,
   getUsageLogs,
   getAllSubscriptions,
-  refreshResponses
+  refreshResponses,
+  createSubscriptionPayment,
+  createAddonPayment
 }; 

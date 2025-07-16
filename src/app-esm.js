@@ -49,15 +49,10 @@ const corsOptions = {
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       'http://127.0.0.1:3002',
+      'https://matrixedu.ai',
       // Add your production frontend URLs here
-      'https://edusmart-admin.vercel.app',
-      'https://edusmart-frontend.vercel.app',
-      'https://edusmart.vercel.app',
-      'https://edusmart-admin.pages.dev',
-      'https://edusmart-9z4.pages.dev',
-      // Add Cloudflare Pages domains
-      'https://edusmart-api.pages.dev',
-      'https://your-project-name.pages.dev',
+     
+      
     ];
     
     // Check if origin is in allowed list
@@ -123,6 +118,7 @@ app.use((req, res, next) => {
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       'http://127.0.0.1:3002',
+      'https://matrixedu.ai',
       'https://edusmart-admin.vercel.app',
       'https://edusmart-frontend.vercel.app',
       'https://edusmart.vercel.app',

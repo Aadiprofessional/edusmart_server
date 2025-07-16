@@ -574,36 +574,41 @@ const responseValidationRules = [
     .trim()
     .notEmpty()
     .withMessage('Type is required')
-    .isIn(['guide', 'template', 'checklist', 'video', 'webinar', 'ebook'])
-    .withMessage('Type must be one of: guide, template, checklist, video, webinar, ebook'),
+    .isIn(['guide', 'template', 'checklist', 'video', 'webinar', 'ebook', 'course'])
+    .withMessage('Type must be one of: guide, template, checklist, video, webinar, ebook, course'),
   
   body('category')
     .isString()
     .trim()
     .notEmpty()
     .withMessage('Category is required')
-    .isIn(['application', 'study', 'test-prep', 'career'])
-    .withMessage('Category must be one of: application, study, test-prep, career'),
+    .isIn(['application', 'study', 'test-prep', 'career', 'visa', 'finance'])
+    .withMessage('Category must be one of: application, study, test-prep, career, visa, finance'),
   
   body('url')
-    .optional()
+    .optional({ checkFalsy: true })
     .isURL()
     .withMessage('URL must be a valid URL'),
   
   body('thumbnail')
-    .optional()
+    .optional({ checkFalsy: true })
     .isURL()
     .withMessage('Thumbnail must be a valid URL'),
   
   body('download_link')
-    .optional()
+    .optional({ checkFalsy: true })
     .isURL()
     .withMessage('Download link must be a valid URL'),
   
   body('video_link')
-    .optional()
+    .optional({ checkFalsy: true })
     .isURL()
     .withMessage('Video link must be a valid URL'),
+  
+  body('file_size')
+    .optional({ checkFalsy: true })
+    .isNumeric()
+    .withMessage('File size must be a number'),
   
   body('featured')
     .optional()

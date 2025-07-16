@@ -4,6 +4,9 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 require('dotenv').config();
 
+// Debug environment variables in production
+require('./src/utils/debug-env');
+
 // Import routes in CommonJS format
 const authRoutes = require('./src/routes/authRoutes');
 const blogRoutes = require('./src/routes/blogRoutes');
@@ -23,6 +26,8 @@ const mistakeCheckRoutes = require('./src/routes/mistakeCheckRoutes');
 const flashcardRoutes = require('./src/routes/flashcardRoutes');
 const contentWriterRoutes = require('./src/routes/contentWriterRoutes');
 const studyPlannerRoutes = require('./src/routes/studyPlannerRoutes');
+const paymentRoutes = require('./src/routes/paymentRoutes');
+const documentSummarizerRoutes = require('./src/routes/documentSummarizerRoutes');
 
 // Initialize app
 const app = express();
@@ -45,6 +50,7 @@ const corsOptions = {
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       'http://127.0.0.1:3002',
+      'https://matrixedu.ai',
       // Production frontend URLs
       'https://edusmart-admin.vercel.app',
       'https://edusmart-frontend.vercel.app',
@@ -154,30 +160,121 @@ app.get('/', (req, res) => {
       mistakeChecks: '/api/mistake-checks',
       flashcards: '/api/flashcards',
       contentWriter: '/api/content-writer',
-      studyPlanner: '/api/study-planner'
+      studyPlanner: '/api/study-planner',
+      payment: '/api/payment',
+      documentSummarizer: '/api/document-summarizer'
     }
   });
 });
 
-// API Routes
+// Debug endpoint for environment variables
+app.get('/debug/env', (req, res) => {
+  res.json({
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      SUPABASE_URL: process.env.SUPABASE_URL ? 'Set ✅' : 'Missing ❌',
+      SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ? `Set ✅ (length: ${process.env.SUPABASE_ANON_KEY.length})` : 'Missing ❌',
+      SUPABASE_KEY: process.env.SUPABASE_KEY ? `Set ✅ (length: ${process.env.SUPABASE_KEY.length})` : 'Missing ❌',
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? `Set ✅ (length: ${process.env.SUPABASE_SERVICE_ROLE_KEY.length})` : 'Missing ❌',
+      JWT_SECRET: process.env.JWT_SECRET ? 'Set ✅' : 'Missing ❌'
+    },
+    keys_comparison: {
+      anon_key_start: process.env.SUPABASE_ANON_KEY ? process.env.SUPABASE_ANON_KEY.substring(0, 20) + '...' : 'N/A',
+      service_key_start: process.env.SUPABASE_SERVICE_ROLE_KEY ? process.env.SUPABASE_SERVICE_ROLE_KEY.substring(0, 20) + '...' : 'N/A',
+      keys_are_same: process.env.SUPABASE_ANON_KEY === process.env.SUPABASE_SERVICE_ROLE_KEY
+    }
+  });
+});
+
+// Test Supabase connection endpoint
+app.get('/debug/supabase', async (req, res) => {
+  try {
+    const { createClient } = require('@supabase/supabase-js');
+    
+    const tests = [];
+    
+    // Test anon key
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+      try {
+        const supabaseAnon = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+        const { data, error } = await supabaseAnon.from('blogs').select('count', { count: 'exact', head: true });
+        tests.push({
+          key_type: 'ANON',
+          status: error ? 'FAILED' : 'SUCCESS',
+          error: error?.message,
+          data: data
+        });
+      } catch (err) {
+        tests.push({
+          key_type: 'ANON',
+          status: 'ERROR',
+          error: err.message
+        });
+      }
+    }
+    
+    // Test service role key
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const supabaseService = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+        const { data, error } = await supabaseService.from('blogs').select('count', { count: 'exact', head: true });
+        tests.push({
+          key_type: 'SERVICE_ROLE',
+          status: error ? 'FAILED' : 'SUCCESS',
+          error: error?.message,
+          data: data
+        });
+      } catch (err) {
+        tests.push({
+          key_type: 'SERVICE_ROLE',
+          status: 'ERROR',
+          error: err.message
+        });
+      }
+    }
+    
+    res.json({
+      message: 'Supabase Connection Test',
+      tests,
+      recommendations: tests.length === 0 ? ['No valid Supabase credentials found'] : 
+        tests.filter(t => t.status !== 'SUCCESS').map(t => `Fix ${t.key_type} key: ${t.error}`)
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      error: 'Supabase test failed',
+      message: error.message
+    });
+  }
+});
+
+// API Routes - Order matters for proper routing
 app.use('/api/auth', authRoutes);
-app.use('/api', blogRoutes);
-app.use('/api', courseRoutes);
-app.use('/api/v2', enhancedCourseRoutes);
-app.use('/api/case-studies', caseStudyRoutes);
-app.use('/api', responseRoutes);
-app.use('/api', scholarshipRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/user', userProfileRoutes);
+
+// Enhanced courses must come before regular courses
+app.use('/api/v2', enhancedCourseRoutes);
+
+// Main content routes
+app.use('/api', blogRoutes);                    // handles /api/blogs
+app.use('/api', courseRoutes);                  // handles /api/courses
+app.use('/api', responseRoutes);                // handles /api/responses  
+app.use('/api', scholarshipRoutes);             // handles /api/scholarships
+app.use('/api', featuredRoutes);                // handles /api/featured
+
+// Specific mounted routes
+app.use('/api/case-studies', caseStudyRoutes);
 app.use('/api/universities', universityRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api', featuredRoutes);
 app.use('/api/homework', homeworkRoutes);
 app.use('/api/mistake-checks', mistakeCheckRoutes);
 app.use('/api/flashcards', flashcardRoutes);
 app.use('/api/content-writer', contentWriterRoutes);
 app.use('/api/study-planner', studyPlannerRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/document-summarizer', documentSummarizerRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

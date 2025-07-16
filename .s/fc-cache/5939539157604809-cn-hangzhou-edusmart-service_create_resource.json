@@ -1,3 +1,6 @@
 {
-  "serviceName": "edusmart-service"
+  "serviceName": "edusmart-service",
+  "functionNames": [
+    "edusmart-service/edusmart-api"
+  ]
 }

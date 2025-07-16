@@ -1,0 +1,1043 @@
+Antom, leading provider of tailored payment solutions
+Search documentation
+English (US)
+Contact Us
+Go to Homepage
+Checkout Payment
+Overview
+Quick start
+Accept payments
+Checkout page integration
+SDK integration
+API-only integration
+APM paymentsAPM
+Card paymentsCard
+Hosted mode
+Server-to-server mode
+After payments
+Notifications
+Cancel
+Refund
+Dispute
+Reconciliation
+Miscellaneous
+Payment methods
+Advanced features
+Other resources
+Hosted mode
+2025-07-11 14:58
+This article describes how to integrate card payment methods through the hosted mode. The hosted mode protects you from PCI-DSS restrictions because sensitive data is not passed through your servers and there is no requirement for you to be PCI-qualified. In this mode, Antom provides a payment information collection page that captures payment information and stores it as a card token (cardToken) for use in subsequent processes.
+
+User experience
+The following figures show the user experience in the first-time and saved card payments.
+
+First-time payments
+Web
+App
+Web user experience
+image.png
+
+Saved card payments
+Web
+App
+Web user experience
+image.png
+
+Payment flow
+For card payments with the hosted mode, the payment flow is composed of the following steps.
+
+General card payments
+South Korean card issuer-authentication payments
+image.png
+
+The buyer enters the checkout page.
+Create a payment request.
+After the buyer selects a payment method and submits the order, call the pay (Checkout Payment) API to obtain the payment link to complete the payment.
+Handle the payment continuation URL.
+The payment continuation URL is to be returned to the client. You need to redirect the buyer to the payment continuation URL. The payment continuation URL proceeds the payment process redirecting users to 3DS authentication flows.
+Get the payment result.
+Obtain the payment result using one of the following two methods:
+Asynchronous notification: Specify the paymentNotifyUrl in the pay (Checkout Payment) API to set the address for receiving asynchronous notifications. When the payment is successful or expires, Antom uses notifyPayment to send asynchronous notifications to you.
+Synchronous inquiry: Call the inquiryPayment API to check the payment status.
+Get the capture result.
+For card payments, you need to obtain the capture result using one of the following two methods:
+Asynchronous notification: Specify paymentNotifyUrl in the pay (Checkout Payment) API to set the address for receiving asynchronous notifications. When the payment request is successful or expires, Antom uses notifyCapture to send asynchronous notifications to you.
+Synchronous inquiry: Call the inquiryPayment API to check the payment request status.
+Note: Issuer-authentication payments of South Korean Cards involve multiple card brands. To improve the payment experience, it is recommended that you display the card brand on your page to reduce intermediate page redirections. In this case, note the following scenarios:
+
+Display card brands on your page.
+Specify the card brand information selected by the buyer when initiating a payment request.
+Antom returns the payment page for the specific card brand, not the intermediate page for card brand selection.
+Integration steps
+Most card payments follow the general payment flow and integration process provided by Antom. Start your integration by taking the following steps.
+
+(Optional) Display payment methods
+Authorize a payment
+Obtain the payment result
+Capture
+Obtain the capture results
+Note: For South Korean Cards, issuer-authentication and non-authentication payment types exist. Non-authentication payments of South Korean Cards follow the general card payment process. However, issuer-authentication payments of South Korean Cards involve additional actions to take. 
+
+Step 1: (Optional) Display payment methods 
+Add the logos and names of the payment methods you plan to integrate. This allows buyers to easily choose their preferred method of payment. You can source the logos and names in two ways:
+
+Contact Antom Technical Support.
+Call the consult (Checkout Payment) API to obtain the payment methods and logo URL supported by the current transactions based on the currency, transaction initiation terminal type, user region, and contracted payment methods.
+The following figure shows the page effect after adding a payment method:
+
+image.png
+
+
+Step 2: Authorize a payment 
+When the user selects a payment method provided by Antom, the card information collection page is displayed for the user. Antom will collect the user's card, environment, and order information. Call the pay (Checkout Payment) API, and submit an authorization request for payment.
+
+Initiate a payment request 
+Antom provides server-side API libraries for multiple languages. The following code uses Java as an example. You need to install Java 6 or later.
+
+Install an API library
+You can find the latest version on GitHub.
+
+<dependency>
+    <groupId>com.alipay.global.sdk</groupId>
+    <artifactId>global-open-sdk-java</artifactId>
+    <version>2.0.44</version>
+</dependency>
+Initialize the request instance
+import com.alipay.global.api.AlipayClient;
+import com.alipay.global.api.DefaultAlipayClient;
+import com.alipay.global.api.model.constants.EndPointConstants;
+
+public class Sample {
+    public static final String        CLIENT_ID            = "";
+    public static final String        ANTOM_PUBLIC_KEY     = "";
+    public static final String        MERCHANT_PRIVATE_KEY = "";
+
+    private final static AlipayClient CLIENT               = new DefaultAlipayClient(
+            EndPointConstants.SG, MERCHANT_PRIVATE_KEY, ANTOM_PUBLIC_KEY, CLIENT_ID);
+
+}
+Create a payment request
+When sending a request for the pay API, you can also choose the following features according to your business needs:
+
+3DS
+Enable 3D authentication: Specify the value of is3DSAuthentication in the pay API to set whether the transaction is authenticated by using 3D Secure.
+Salvage transaction intelligently: Automatically initiate a 3D Secure authentication for a non-3D Secure transaction if required by the card issuer to salvage a failed transaction.
+MPI capability: The merchant prioritizes the third-party verification before the transaction is initiated, passes in the verification result information in the payment request, and specifies non-3D verification, which is not available if the merchant does not capture the card information.
+Note: For South Korean Cards, the feature of 3DS is not involved.
+
+Fraud protection
+Value-added risk control services: Antom provides upgraded risk control services at a transaction level, and intelligently decides risk control strategies based on the risk level of a transaction.
+Address Verification System (AVS) service: This service verifies whether the provided billing address matches the cardholder's address on record at the issuing bank. AVS helps to prevent fraudulent transactions.
+Tokenization
+Store card info: Obtain the buyer's agreement to store card information at the first payment, so that the card information does not need to be entered again for the next payment.
+Installment
+Installment payment: When making a payment, buyers can choose the installment payment method and make regular payments for each installment period. After the buyer completes the payment for the initial installment period, Antom settles the full order amount based on the settlement period specified in the contract.
+Specific feature
+Merchant-initiated transactions (MIT): Initiate scheduled or unscheduled transactions without user involvement.
+Specify card brand: When the buyer chooses co-badged card payment, you can specify the card brand or the region where the card is authorized for payment.
+The following parameters are included in the payment request.
+
+Parameter name
+
+Is required?
+
+Description
+
+productCode
+
+Yes
+
+Represents the payment product that is being used, which is stipulated in the contract. For Cashier Payment, the value is fixed as CASHIER_PAYMENT.
+
+paymentRequestId
+
+Yes
+
+The unique ID assigned by a merchant to identify a payment request.
+
+paymentAmount
+
+Yes
+
+The payment amount that the merchant requests to receive in the order currency.
+
+paymentMethod
+
+Yes
+
+The payment method that is used to collect the payment by the merchant or acquirer.
+
+paymentRedirectUrl
+
+Yes
+
+The merchant page URL that the user is redirected to after the payment is completed.
+
+settlementStrategy
+
+No
+
+The settlement strategy for the payment request.
+
+order
+
+Yes
+
+The order information, such as buyer, merchant, goods, amount, shipping information, and purchase environment.
+
+paymentExpiryTime
+
+No
+
+The specific date and time after which the payment session will expire.
+
+env
+
+Yes
+
+Environmental information: used to improve payment success rate.
+
+selectedCardBrand
+
+No
+
+For issuer-authentication of Korean cards scenarios, note the following scenarios when specifying the selectedCardBrand parameter:
+
+Specify the selectedCardBrand parameter when the bank list provided by merchant.
+No need to specify this parameter when the bank list provided by Antom.
+See Card brands for a list of card brands.
+
+requireIssuerAuthentication	
+No
+
+For issuer-authentication of Korean cards scenarios, you need to specify the requireIssuerAuthentication parameter as true﻿.
+
+For more information about all parameters, refer to pay (Checkout Payment) API.
+
+Sample codes of calling pay API
+The following sample code is used for initiating a payment:
+
+public static void payByCard() {
+    AlipayPayRequest alipayPayRequest = new AlipayPayRequest();
+    alipayPayRequest.setProductCode(ProductCodeType.CASHIER_PAYMENT);
+
+    // replace with your paymentRequestId
+    String paymentRequestId = UUID.randomUUID().toString();
+    alipayPayRequest.setPaymentRequestId(paymentRequestId);
+
+    // set amount
+    Amount amount = Amount.builder().currency("SGD").value("4200").build();
+    alipayPayRequest.setPaymentAmount(amount);
+
+    // set paymentMethod
+    PaymentMethod paymentMethod = PaymentMethod.builder().paymentMethodType("CARD").build();
+    alipayPayRequest.setPaymentMethod(paymentMethod);
+
+    // replace with your orderId
+    String orderId = UUID.randomUUID().toString();
+
+    // set buyer info
+    Buyer buyer = Buyer.builder().referenceBuyerId("yourBuyerId").build();
+
+    // set order info
+    Order order = Order.builder().referenceOrderId(orderId)
+            .orderDescription("antom testing order").orderAmount(amount).buyer(buyer).build();
+    alipayPayRequest.setOrder(order);
+
+    // set env info
+    Env env = Env.builder().terminalType(TerminalType.WEB).clientIp("1.2.3.4").build();
+    alipayPayRequest.setEnv(env);
+
+    // set auth capture payment mode
+    PaymentFactor paymentFactor = PaymentFactor.builder().isAuthorization(true).build();
+    alipayPayRequest.setPaymentFactor(paymentFactor);
+
+    // replace with your notify url
+    alipayPayRequest.setPaymentNotifyUrl("https://www.yourNotifyUrl.com");
+
+    // replace with your redirect url
+    alipayPayRequest.setPaymentRedirectUrl("https://www.yourMerchantWeb.com");
+
+    // do Payment
+    AlipayPayResponse alipayPayResponse = null;
+    try {
+        alipayPayResponse = CLIENT.execute(alipayPayRequest);
+    } catch (AlipayApiException e) {
+        String errorMsg = e.getMessage();
+        // handle error condition
+    }
+}
+The following code shows a sample of the request message:
+
+General card payments
+South Korean card issuer-authentication payments
+General card payments request
+{
+  "env": {
+    "clientIp": "1.2.3.4",
+    "terminalType": "WEB"
+  },
+  "order": {
+    "buyer": {
+      "referenceBuyerId": "yourBuyerId"
+    },
+    "orderAmount": {
+      "currency": "SGD",
+      "value": "4200"
+    },
+    "orderDescription": "antom testing order",
+    "referenceOrderId": "referenceOrderId01"
+  },
+  "paymentAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "paymentFactor": {
+    "isAuthorization": true
+  },
+  "paymentMethod": {
+    "paymentMethodType": "CARD"
+  },
+  "paymentNotifyUrl": "https://www.yourNotifyUrl.com",
+  "paymentRedirectUrl": "https://www.yourMerchantWeb.com",
+  "paymentRequestId": "paymentRequestId01",
+  "productCode": "CASHIER_PAYMENT"
+}
+Common questions
+
+Q: How to set terminalType?
+
+A: The valid values of terminalType are:
+
+If the buyer initiates a transaction from PC, the terminalType needs to be specified as WEB.
+If the buyer initiates a transaction from the mobile browser, the terminalType needs to be specified as WAP. Add the osType parameter and fill in the corresponding system parameters ANDROID or IOS according to the buyer's mobile phone.
+If the buyer initiates a transaction from app, the terminalType needs to be specified as APP.
+Q: Can I use Chinese characters in the value of the request parameters?
+
+A: To avoid incompatibility of a certain payment method, do not use Chinese characters for fields in the request.
+
+  
+
+Q: How to set the URL to receive the payment notification?
+
+A: Specify paymentNotifyUrl in the createPaymentSession (Checkout Payment) API to receive the asynchronous notification about the payment result (notifyPayment), or configure the receiving URL in Antom Dashboard. If the URL is specified in both the request and Antom Dashboard, the value specified in the request takes precedence.
+
+Receive a payment response
+The returned parameters contain the following content:
+
+normalUrl: The payment continuation URL, used for redirection.
+paymentId: Order ID.
+The following code is the sample response:
+
+Successful authorized payment
+Failed authorized payment
+Authorized payments are not final
+Successful authorization
+{
+  "paymentAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "paymentCreateTime": "2024-01-01T00:00:00+08:00",
+  "paymentId": "20240101123456789XXXX",
+  "paymentRequestId": "paymentRequestId01",
+  "paymentResultInfo": {
+    "avsResultRaw": "A",
+    "cardBrand": "VISA",
+    "cardNo": "****************",
+    "cvvResultRaw": "Y",
+    "networkTransactionId": "networkTransIdXXXX",
+    "threeDSResult": {
+      "cavv": "",
+      "eci": ""
+    }
+  },
+  "result": {
+    "resultCode": "SUCCESS",
+    "resultMessage": "success.",
+    "resultStatus": "S"
+  }
+}
+Common questions
+
+Q: What is the normalUrl?
+
+A: For web or WAP transactions, Antom returns normalUrl, which the server-side needs to pass to the client-side for redirection. When you initiate payment for the same order again, you need to obtain a new normalUrl for redirection.
+
+  
+
+Q: What is the paymentId?
+
+A: If you store the corresponding order number for subsequent refunds and reconciliations, you can specify the paymentId.
+
+Redirect to the payment continuation URL 
+The merchant server passes the normalUrl to the client, and the client page handles the redirection process to normalUrl.
+
+Step 3: Obtain the payment result 
+When the buyer completes the payment or the payment times out, you can get the corresponding payment result from the Antom asynchronous notification or by actively inquiring the payment result.
+
+The response obtained from asynchronous notifications and inquiryPayment contains the authorization payment result as well as other key information such as: 
+
+API
+
+Authorization result
+
+AVS info
+
+CVV info
+
+3DS authentication info
+
+notifyPayment
+
+resultStatus
+
+avsResultRaw
+
+cvvResultRaw
+
+threeDSResult (only available for the 3DS authentication authorization)
+
+inquiryPayment
+
+paymentStatus
+
+avsResultRaw
+
+cvvResultRaw
+
+threeDSResult (only available for the 3DS authentication authorization)
+
+Receive the asynchronous notification
+When a payment is completed or fails, Antom sends an asynchronous notification (notifyPayment) to the address that you specified in the pay (Checkout Payment) API via the paymentNotifyUrl parameter. If the address of each payment is the same, you can also configure the address in Antom Dashboard.
+
+The following sample code shows a notification for a 3D payment:
+
+{
+  "actualPaymentAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "cardInfo": {
+    "avsResultRaw": "A",
+    "cardBrand": "MASTERCARD",
+    "cardNo": "****************",
+    "cvvResultRaw": "Y",
+    "funding": "DEBIT",
+    "issuingCountry": "US",
+    "networkTransactionId": "XXXXX",
+    "paymentMethodRegion": "GLOBAL",
+    "threeDSResult": {
+      "cavv": "",
+      "eci": ""
+    }
+  },
+  "notifyType": "PAYMENT_RESULT",
+  "paymentAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "paymentCreateTime": "2024-01-01T00:00:00+08:00",
+  "paymentId": "20240101123456789XXXX",
+  "paymentRequestId": "paymentRequestId01",
+  "paymentResultInfo": {
+    "avsResultRaw": "A",
+    "cardBrand": "MASTERCARD",
+    "cardNo": "****************",
+    "cvvResultRaw": "Y",
+    "funding": "DEBIT",
+    "issuingCountry": "US",
+    "paymentMethodRegion": "GLOBAL",
+    "threeDSResult": {
+      "eci": "02",
+      "threeDSVersion": "2.2.0",
+      "caav": "cavvSample"
+    }
+  },
+  "paymentTime": "2024-01-01T00:01:00+08:00",
+  "result": {
+    "resultCode": "SUCCESS",
+    "resultMessage": "success.",
+    "resultStatus": "S"
+  }
+}
+The following sample code shows a notification for a non-3D payment:
+
+{
+  "actualPaymentAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "cardInfo": {
+    "avsResultRaw": "A",
+    "cardBrand": "MASTERCARD",
+    "cardNo": "****************",
+    "cvvResultRaw": "Y",
+    "funding": "DEBIT",
+    "issuingCountry": "US",
+    "networkTransactionId": "XXXXX",
+    "paymentMethodRegion": "GLOBAL",
+    "threeDSResult": {
+      "cavv": "",
+      "eci": ""
+    }
+  },
+  "notifyType": "PAYMENT_RESULT",
+  "paymentAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "paymentCreateTime": "2024-01-01T00:00:00+08:00",
+  "paymentId": "20240101123456789XXXX",
+  "paymentRequestId": "paymentRequestId01",
+  "paymentResultInfo": {
+    "avsResultRaw": "A",
+    "cardBrand": "MASTERCARD",
+    "cardNo": "****************",
+    "cvvResultRaw": "Y",
+    "funding": "DEBIT",
+    "issuingCountry": "US",
+    "networkTransactionId": "XXXXX",
+    "paymentMethodRegion": "GLOBAL",
+    "threeDSResult": {
+      "cavv": "",
+      "eci": ""
+    }
+  },
+  "paymentTime": "2024-01-01T00:01:00+08:00",
+  "result": {
+    "resultCode": "SUCCESS",
+    "resultMessage": "success.",
+    "resultStatus": "S"
+  }
+}
+How to verify the signature of the notification and make a response to the notification, see Sign a request and verify the signature.
+
+Common questions
+
+Q: When will the notification be sent?
+
+A: It depends on whether the payment is completed:
+
+If the payment is successfully completed, Antom will usually send you an asynchronous notification within 3 to 5 seconds. For some payment methods like cash payment, the notification might take a bit longer.
+If the payment is not completed, Antom needs to close the order first before sending an asynchronous notification. The time it takes for different payment methods to close the order varies, usually defaulting to 14 minutes.
+Q: Will the asynchronous notification be re-sent?
+
+A: Yes, the asynchronous notification will be re-sent automatically within 24 hours for the following cases:
+
+If you didn't receive the asynchronous notification due to network reasons.
+If you receive an asynchronous notification from Antom, but you didn't make a response to the notification in the Sample code format.
+The notification can be resent up to 8 times or until a correct response is received to terminate delivery. The sending intervals are as follows: 0 minutes, 2 minutes, 10 minutes, 10 minutes, 1 hour, 2 hours, 6 hours, and 15 hours.
+
+  
+
+Q: When responding to asynchronous notification, do I need to add a digital signature?
+
+A: If you receive an asynchronous notification from Antom, you are required to return the response in the Sample code format, but you do not need to countersign the response.
+
+  
+
+Q: What are the key parameters in the notification that I need to use?
+
+A: Pay attention to the following key parameters:
+
+result: indicates the payment result of the order.
+paymentRequestId: indicates the payment request number you generated for consult, cancel, and reconciliation.
+paymentId: indicates the payment order number generated by Antom, used for refund and reconciliation.
+paymentAmount: indicates the payment amount.
+Inquire about the payment result
+Call the inquiryPayment API to inquire about the payment result by specifying the following parameters:
+
+Parameter name
+
+is required?
+
+Description
+
+paymentRequestId
+
+No
+
+The payment request number generated by the merchant
+
+The following sample code shows how to call the inquiryPayment API:
+
+public static void inquiryPayment() {
+    AlipayPayQueryRequest alipayPayQueryRequest = new AlipayPayQueryRequest();
+
+    // replace with your paymentRequestId
+    alipayPayQueryRequest.setPaymentRequestId("yourPaymentRequestId");
+
+    AlipayPayQueryResponse alipayPayQueryResponse = null;
+    try {
+        alipayPayQueryResponse = CLIENT.execute(alipayPayQueryRequest);
+    } catch (AlipayApiException e) {
+        String errorMsg = e.getMessage();
+        // handle error condition
+    }
+}
+The following code shows a sample of the request message:
+
+{
+  "paymentRequestId": "paymentRequestId01"
+}
+The following code shows a sample of the response message for a 3D payment:
+
+{
+  "authExpiryTime": "2024-01-08T00:01:00+08:00",
+  "cardInfo": {
+    "cardBrand": "MASTERCARD",
+    "funding": "DEBIT",
+    "issuingCountry": "US"
+  },
+  "paymentAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "paymentId": "20240101123456789XXXX",
+  "paymentMethodType": "CARD",
+  "paymentRedirectUrl": "https://www.yourMerchantWeb.com",
+  "paymentRequestId": "paymentRequestId01",
+  "paymentResultCode": "SUCCESS",
+  "paymentResultInfo": {
+    "avsResultRaw": "A",
+    "cardBrand": "MASTERCARD",
+    "cardNo": "****************",
+    "cvvResultRaw": "Y",
+    "funding": "DEBIT",
+    "issuingCountry": "US",
+    "networkTransactionId": "networkTransIdXXXX",
+    "paymentMethodRegion": "GLOBAL",
+    "threeDSResult": {
+      "eci": "02",
+      "threeDSVersion": "2.2.0",
+      "caav": "cavvSample"
+    }
+  },
+  "paymentResultMessage": "success",
+  "paymentStatus": "SUCCESS",
+  "paymentTime": "2024-01-01T00:01:00+08:00",
+  "result": {
+    "resultCode": "SUCCESS",
+    "resultMessage": "success.",
+    "resultStatus": "S"
+  }
+}
+The following code shows a sample of the response message for a non-3D payment:
+
+{
+  "authExpiryTime": "2024-01-08T00:01:00+08:00",
+  "cardInfo": {
+    "cardBrand": "MASTERCARD",
+    "funding": "DEBIT",
+    "issuingCountry": "US"
+  },
+  "paymentAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "paymentId": "20240101123456789XXXX",
+  "paymentMethodType": "CARD",
+  "paymentRedirectUrl": "https://www.yourMerchantWeb.com",
+  "paymentRequestId": "paymentRequestId01",
+  "paymentResultCode": "SUCCESS",
+  "paymentResultInfo": {
+    "avsResultRaw": "A",
+    "cardBrand": "MASTERCARD",
+    "cardNo": "****************",
+    "cvvResultRaw": "Y",
+    "funding": "DEBIT",
+    "issuingCountry": "US",
+    "networkTransactionId": "networkTransIdXXXX",
+    "paymentMethodRegion": "GLOBAL",
+    "threeDSResult": {
+      "cavv": "",
+      "eci": ""
+    }
+  },
+  "paymentResultMessage": "success",
+  "paymentStatus": "SUCCESS",
+  "paymentTime": "2024-01-01T00:01:00+08:00",
+  "result": {
+    "resultCode": "SUCCESS",
+    "resultMessage": "success.",
+    "resultStatus": "S"
+  }
+}
+Common questions
+
+Q: How often should I call the inquiryPayment API?
+
+A: Call the inquiryPayment API constantly with an interval of 2 seconds until the final payment result is obtained or an asynchronous payment result notification is received.
+
+  
+
+Q: What are the key parameters in the notification that I need to use?
+
+A: Pay attention to these key parameters:
+
+result: represents the result of this inquiryPayment API call, the result of the order needs to be judged according to paymentStatus:
+SUCCESS and FAIL represent the final result.
+PROCESSING represents the processing.
+paymentAmount: indicates the payment amount.
+Step 4: Capture 
+By default, Antom automatically handles funds capture for you. If you specify the value of paymentFactor.captureMode to MANUAL when calling the pay (Checkout Payment) API, you must capture the funds of the payment by calling the capture (Checkout Payment) API. 
+ƒƒƒ
+Automatic capture: Antom automatically captures funds immediately after the user authorizes the payment. The capture result is then communicated to you via an asynchronous notification. Automatic capture is activated when one of ƒurlthe following conditions is met:
+You set the value of paymentFactor.captureMode in the pay (Checkout Payment) API to AUTOMATIC.
+You leave the value of paymentFactor.captureMode in the pay (Checkout Payment) API empty or you do not pass in this parameter.
+Manual capture: You must initiate fund capture by calling the capture (Checkout Payment) API within seven days after successful authorization, otherwise Antom automatically unfreezes the authorized funds of the payment. The total capture amount must be equal to the total authorized amount.
+Notes: 
+
+For card payments, it is recommended to confirm the successful capture result before shipping.
+For South Korean card issuer-authentication payments, only automatic capture is supported, and manual capture is not supported.
+The key request parameters in the capture (Checkout Payment) API are shown in the following table:
+
+Parameter
+
+Description
+
+captureRequestId
+
+A unique identifier that you assign to a capture request.
+
+paymentId
+
+A unique identifier that Antom assigns to an order.
+
+captureAmount
+
+The capture amount, which must be equal to the total authorized amount.
+
+The following sample code is used for initiating a capture.
+
+public static void capture() {
+    AlipayCaptureRequest alipayCaptureRequest = new AlipayCaptureRequest();
+
+    Amount amount = Amount.builder().currency("SGD").value("4200").build();
+    alipayCaptureRequest.setCaptureAmount(amount);
+
+    // replace with your captureRequestId
+    String captureRequestId = UUID.randomUUID().toString();
+    alipayCaptureRequest.setCaptureRequestId(captureRequestId);
+
+    // replace with your paymentId
+    alipayCaptureRequest.setPaymentId("20240101123456789XXXX");
+
+    AlipayCaptureResponse alipayCaptureResponse = null;
+    try {
+        alipayCaptureResponse = CLIENT.execute(alipayCaptureRequest);
+    } catch (AlipayApiException e) {
+        String errorMsg = e.getMessage();
+    }
+}
+The following code shows a sample of the request message:
+
+{
+  "captureAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "captureRequestId": "captureRequestId01",
+  "paymentId": "20240101123456789XXXX"
+}
+Step 5: Obtain the capture results 
+When the buyer completes the capture or the capture times out, you can get the corresponding payment result from the Antom asynchronous notification or by inquiring the payment result actively.
+
+Receive the asynchronous notification
+When the capture is completed or fails, Antom sends an asynchronous notification (notifyCapture) to the address that you specified in the pay (Checkout Payment) API via the paymentNotifyUrl parameter. If the address of receiving each capture notification is the same, you can also configure the address in Antom Dashboard.
+
+The following code is a notification sample of a successful payment:
+
+{
+  "captureAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "notifyType": "CAPTURE_RESULT",
+  "captureId": "20240101987654321XXXX",
+  "captureRequestId": "captureRequestId01",
+  "captureTime": "2024-01-01T00:00:02+08:00",
+  "paymentId": "20240101123456789XXXX",
+  "result": {
+    "resultCode": "SUCCESS",
+    "resultMessage": "success.",
+    "resultStatus": "S"
+  }
+}
+The following code is a notification sample of a failed payment:
+
+{
+  "captureAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "notifyType": "CAPTURE_RESULT",
+  "captureId": "20240101123456789XXXX",
+  "captureRequestId": "captureRequestId01",
+  "captureTime": "2024-01-01T00:00:02+08:00",
+  "paymentId": "20240101123456789XXXX",
+  "result": {
+    "resultCode": "PROCESS_FAIL",
+    "resultMessage": "fail.",
+    "resultStatus": "F"
+  }
+}
+How to verify the signature of the notification and make a response to the notification, see Sign a request and verify the signature.
+
+Common questions
+
+Q: Will the asynchronous notification be re-sent?
+
+A: Yes, the asynchronous notification will be re-sent automatically within 24 hours for the following cases:
+
+If you didn't receive the asynchronous notification due to network reasons.
+If you receive an asynchronous notification from Antom, but you didn't make a response to the notification in the Sample code format.
+The notification can be resent up to 8 times or until a correct response is received to terminate delivery. The sending intervals are as follows: 0 minutes, 2 minutes, 10 minutes, 10 minutes, 1 hour, 2 hours, 6 hours, and 15 hours.
+
+  
+
+Q: When responding to asynchronous notification, do I need to add a digital signature?
+
+A: If you receive an asynchronous notification from Antom, you are required to return the response in the Sample code format, but you do not need to countersign the response.
+
+  
+
+Q: What are the key parameters in the notification that I need to use?
+
+A: Pay attention to the following key parameters:
+
+result: represents the capture result of the order.
+notifyType: the value of notifyType is CAPTURE_RESULT.
+paymentRequestId: the payment request number you generated, used for querying, canceling, and reconciliation.
+paymentId: the payment order ID generated by Antom used for refund and reconciliation.
+acquirerReferenceNo: merchants integrating with in-card payment services in Singapore and Hong Kong will receive specific acquirer numbers in the notification.
+Inquire about the capture result
+Call the inquiryPayment API to inquire about the capture result by specifying the following parameters:
+
+Parameter name
+
+is required?
+
+Description
+
+paymentRequestId
+
+No
+
+The payment request number generated by the merchant
+
+The following sample code shows how to call the inquiryPayment API:
+
+public static void inquiryPayment() {
+    AlipayPayQueryRequest alipayPayQueryRequest = new AlipayPayQueryRequest();
+
+    // replace with your paymentRequestId
+    alipayPayQueryRequest.setPaymentRequestId("yourPaymentRequestId");
+
+    AlipayPayQueryResponse alipayPayQueryResponse = null;
+    try {
+        alipayPayQueryResponse = CLIENT.execute(alipayPayQueryRequest);
+    } catch (AlipayApiException e) {
+        String errorMsg = e.getMessage();
+        // handle error condition
+    }
+}
+The following is the request message:
+
+{
+  "paymentRequestId": "paymentRequestId01"
+}
+Value of capture status
+The value of the transactions field in the API response is the capture status:
+
+Parameter
+
+Description
+
+transactions.transationType
+
+The value is CAPTURE. It indicates the capture status.
+
+transactions.transactionResult
+
+The capture result.
+
+The value of transactions indicates the capture status. See the following code samples for a successful capture:
+
+{
+  "transactions": [
+    {
+      "transactionType": "CAPTURE",
+      "transactionStatus": "SUCCESS",
+      "transactionRequestId": "captureRequestId01",
+      "transactionAmount": {
+        "currency": "SGD",
+        "value": "4200"
+      },
+      "transactionTime": "2024-01-01T00:00:02+08:00",
+      "transactionId": "20240101123456789XXXX",
+      "transactionResult": {
+        "resultStatus": "S",
+        "resultCode": "SUCCESS",
+        "resultMessage": "success"
+      }
+    }
+  ]
+}
+The value of transactions indicates the capture status. See the following code samples for a failed capture:
+
+{
+  "transactions": [
+    {
+      "transactionType": "CAPTURE",
+      "transactionStatus": "SUCCESS",
+      "transactionRequestId": "captureRequestId01",
+      "transactionAmount": {
+        "currency": "SGD",
+        "value": "4200"
+      },
+      "transactionTime": "2024-01-01T00:00:02+08:00",
+      "transactionId": "20240101123456789XXXX",
+      "transactionResult": {
+        "resultStatus": "F",
+        "resultCode": "PROCESS_FAIL",
+        "resultMessage": "General business failure. No retry."
+      }
+    }
+  ]
+}
+The value of transactions indicates the capture status. See the following code samples for a capture that is in processing:
+
+{
+  "transactions": [
+    {
+      "transactionType": "CAPTURE",
+      "transactionStatus": "SUCCESS",
+      "transactionRequestId": "captureRequestId01",
+      "transactionAmount": {
+        "currency": "SGD",
+        "value": "4200"
+      },
+      "transactionTime": "2024-01-01T00:00:02+08:00",
+      "transactionId": "20240101123456789XXXX",
+      "transactionResult": {
+        "resultStatus": "U",
+        "resultCode": "PAYMENT_IN_PROCESS",
+        "resultMessage": "payment in process"
+      }
+    }
+  ]
+}
+Common questions
+
+Q: How often should I call the inquiryPayment API?
+
+A: Call the inquiryPayment API constantly with an interval of 2 seconds until the final payment result is obtained or an asynchronous payment result notification is received.
+
+Best practice
+Follow these best practices to improve integration efficiency.
+
+Customize the payment timeout
+In the Checkout Payment scenario, the default timeout on the Antom side is 14 minutes. After the payment timeout, the buyer can't continue to pay. You can specify the timeout time through the paymentExpireTime parameter of the pay (Checkout Payment) API. After exceeding the specified time, the buyer cannot scan the code or log in to the checkout page.
+
+The following sample code shows how to specify the paymentExpireTime parameter in the pay (Checkout Payment) API:
+
+{
+  "env": {
+    "clientIp": "1.2.3.4",
+    "terminalType": "WEB"
+  },
+  "order": {
+    "buyer": {
+      "referenceBuyerId": "yourBuyerId"
+    },
+    "orderAmount": {
+      "currency": "SGD",
+      "value": "4200"
+    },
+    "orderDescription": "antom testing order",
+    "referenceOrderId": "referenceOrderId01"
+  },
+  "paymentAmount": {
+    "currency": "SGD",
+    "value": "4200"
+  },
+  "paymentExpiryTime": "2024-01-01T00:30:00+08:00",
+  "paymentFactor": {
+    "isAuthorization": true
+  },
+  "paymentMethod": {
+    "paymentMethodType": "CARD"
+  },
+  "paymentNotifyUrl": "https://www.yourNotifyUrl.com",
+  "paymentRedirectUrl": "https://www.yourMerchantWeb.com",
+  "paymentRequestId": "paymentRequestId01",
+  "productCode": "CASHIER_PAYMENT"
+}
+It is recommended to set the API timeout to 10s to increase the response success rate.
+
+Suggestions on processing logic for merchant results pages
+Handling redirection issues
+When the buyer has successfully completed a payment but encounters issues redirecting to the paymentRedirectUrl that you specified, whether due to network issues or payment method limitations, take note of the following two points:
+
+You cannot use the client redirection as the basis for determining the success of the payment.
+If the paymentRedirectUrl of the payment method page fails to redirect to the merchant page, the buyer may manually click the original merchant page. To prevent buyers from mistakenly attempting to pay for the order again, it is recommended to implement a pop-up window on the original merchant page. This pop-up should allow for transaction result inquiries. When buyers click on this pop-up, it should display the transaction outcome, thereby preventing any duplicate payment attempts.
+Trigger order result query after redirection
+If the merchant side is pulled up after triggering a call to the inquiryPayment API, then the following different results are suggested:
+
+Successful payment: The page will display the content related to the shipment after successful payment.
+Payment Failure: Indicate that the payment failed and offer guidance for retrying the payment to encourage order completion.
+Payment processing: Display the landing effect and implement a brief pause of 3-5 seconds before querying the server again for the payment outcome. If the result remains inconclusive (neither success nor failure), it is recommended to display "order processing" or "order management portal to view the final result.". Refrain from attributing the delay to “network processing”.
+Payment failed retry
+When a payment attempt for an order fails, and the buyer can retry payment for the same order, we recommend adhering to the following integration process for a seamless experience:
+
+In the payment request, set the referenceOrderId to the order ID and the paymentRequestId to the payment order ID.
+If payment needs to be retried for the same order, check the order status first. If payment has already succeeded, display "Completed Payment" to the buyer. If not, call the pay (Checkout Payment) API again to obtain a new normalUrl for redirection. Though referenceOrderId remains the same since it's the same order, you must update the paymentRequestId for the subsequent payment attempt.
+Verify that each merchant order only has one successful payment associated with it. If multiple successful payments are detected for a single order, call the cancel API to initiate a refund for the buyer.
+For payment methods that do not offer refunds, it is recommended to cancel the initial payment before initiating a new one.
+Timing of obtaining and checking payment results
+In order to guarantee the stable acquisition of payment results and avoid the situation where the buyer's payment is completed but you do not get the payment result. It is recommended that you check the payment results at the following stages:
+
+When the merchant payment result page is displayed.
+Before shipping to the buyer.
+When you receive the Antom reconciliation file.
+To view the latest updates to the documentation, visit Release notes.
+
+© 2025 Antom
+
+Legal Information 
+
+Contact Sales 
+
+Antom Portal  
+
+Is this page helpful?
+On this page
+User experience
+First-time payments
+Saved card payments
+Payment flow
+Integration steps
+Step 1: (Optional) Display payment methods
+Step 2: Authorize a payment
+Initiate a payment request
+Install an API library
+Initialize the request instance
+Create a payment request
+Receive a payment response
+Redirect to the payment continuation URL
+Step 3: Obtain the payment result
+Receive the asynchronous notification
+Inquire about the payment result
+Step 4: Capture
+Step 5: Obtain the capture results
+Receive the asynchronous notification
+Inquire about the capture result
+Value of capture status
+Best practice
+Customize the payment timeout
+Suggestions on processing logic for merchant results pages
+Payment failed retry
+Timing of obtaining and checking payment results
+ Feedback

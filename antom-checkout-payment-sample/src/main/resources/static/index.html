@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Antom Demo Checkout</title>
+    <script src="index.js" defer></script>
+    <link rel="stylesheet" href="index.css" />
+  </head>
+  <body>
+    <div class="antom-content">
+      <header>
+        <div class="header-content">
+          <img
+            src="https://mdn.alipayobjects.com/portal_pdqp4x/afts/file/A*xWIWSb_-O6MAAAAAAAAAAAAAAQAAAQ"
+            alt=""
+            class="header-content-img"
+          />
+          <div class="subtitle">Checkout Demo</div>
+        </div>
+      </header>
+      <div class="content">
+        <div class="checkout-container">
+          <div class="container-left">
+            <div class="leftContent">
+              <div class="headerContent">
+                <img
+                  src="https://mdn.alipayobjects.com/portal_pdqp4x/afts/file/A*pcZzR78r00UAAAAAAAAAAAAAAQAAAQ"
+                  alt=""
+                />
+                <img
+                  class="logo"
+                  src="https://mdn.alipayobjects.com/portal_pdqp4x/afts/file/A*VxKjTpgg4v0AAAAAAAAAAAAAAQAAAQ"
+                />
+                <span class="testDemo">Test Demo</span>
+              </div>
+
+              <div class="order">
+                <div class="orderTotal">
+                  <div class="totals">Total to pay</div>
+                  <div class="money">JPY 6000</div>
+                </div>
+                <h2 class="order-title">Order summary</h2>
+                <section class="product-details">
+                  <div class="details-left">
+                    <img
+                      src="https://mdn.alipayobjects.com/portal_pdqp4x/afts/file/A*rP0KS6sDPMsAAAAAAAAAAAAAAQAAAQ"
+                      alt=""
+                    />
+                  </div>
+                  <div class="details-right">
+                    <div class="rightContent"></div>
+                    <div class="details-shop-content">
+                      <p class="details-shop-content-text">
+                        Classic Black Cotton T-shirt, extra-soft feel.
+                      </p>
+                      <p class="price">JPY 3000</p>
+                    </div>
+                    <p class="details-right-shop-message">
+                      <span>Black</span>
+                      <span class="line"></span>
+                      <span>L size</span>
+                    </p>
+                    <p class="details-right-shop-qty">Qty 1</p>
+                  </div>
+                </section>
+                <section class="product-details">
+                  <div class="details-left">
+                    <img
+                      src="https://mdn.alipayobjects.com/portal_pdqp4x/afts/file/A*H8M9RrxlArAAAAAAAAAAAAAAAQAAAQ"
+                      alt=""
+                    />
+                  </div>
+                  <div class="details-right">
+                    <div class="details-shop-content">
+                      <p class="details-shop-content-text">Classic Woman Bag</p>
+                      <p class="price">JPY 3000</p>
+                    </div>
+                    <p class="details-right-shop-message">Black</p>
+                    <p class="details-right-shop-qty">Qty 1</p>
+                  </div>
+                </section>
+              </div>
+              <div class="total">
+                <p>Total</p>
+                <p class="money">JPY 6000</p>
+              </div>
+            </div>
+          </div>
+          <div class="container-right">
+            <div class="rightContent">
+              <div class="product-info">
+                <p>choose your payment method</p>
+                <div
+                  class="payment-options radio-group"
+                  id="checkout-box"
+                ></div>
+                <button class="submit" id="submit">Pay JPY 6000</button>
+              </div>
+              <div class="result-container" id="result-container">
+                <div class="result-title">
+                  <img src="" alt="" id="resultIcon" />
+                  <span id="message"></span>
+                </div>
+                <div id="content"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="container-desktop desktop-animation" id="container-desktop">
+          <div class="container-content">
+            <img src="" alt="" id="alert-icon" />
+            <div class="container-title" id="container-title"></div>
+            <div class="container-subTitle" id="container-subTitle"></div>
+            <button type="button" class="container-btn" id="alert-ok-btn">
+              OK
+            </button>
+          </div>
+        </div>
+        <div class="mockup" id="mockup"></div>
+      </div>
+      <div class="footer">
+        This page is used only for sandbox testing, for more testing
+        information, please refer
+        <a
+          href="https://global.alipay.com/docs/ac/cashierpay/test"
+          class="gotoTest"
+          target="_blank"
+        >
+          Testing resources
+        </a>
+      </div>
+    </div>
+  </body>
+</html>
+null
